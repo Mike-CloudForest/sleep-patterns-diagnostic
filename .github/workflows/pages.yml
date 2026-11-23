@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Publish the quiz
 
 on:
   push:
@@ -6,29 +6,24 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: publish-sleep-quiz
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  publish:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Update the Pages publishing branch and request a build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo="repos/$GITHUB_REPOSITORY"
+          main_sha=$(gh api "$repo/git/ref/heads/main" --jq .object.sha)
+          gh api --method PATCH "$repo/git/refs/heads/gh-pages" -f sha="$main_sha" -F force=false --silent
+          gh api --method POST "$repo/pages/builds" --silent
