@@ -4,22 +4,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sleep Patterns Diagnostic Tool | Cloud Forest</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; }
-    .quiz-option { transition: all 0.2s; }
-    .quiz-option.selected { border-color: #2563eb; background: #eff6ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f8fafc; color: #172033; font: 1rem/1.55 system-ui, sans-serif; }
+    body > div { max-width: 48rem; margin: auto; padding: clamp(1rem, 3vw, 2rem); }
+    header { margin: 1rem 0 2rem; text-align: center; }
+    h1, h2, h3, h4, p, ul { margin: 0; }
+    h1, h2, h3, h4 { line-height: 1.25; }
+    h1 { font-size: clamp(2rem, 5vw, 2.5rem); color: #1e4081; }
+    h2 { font-size: 1.875rem; color: #1e4081; }
+    h3 { font-size: 1.375rem; }
+    h4 { font-size: 1.125rem; }
+    .text-sm { font-size: .9rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-gray-500, .text-gray-600 { color: #4b5563; }
+    .mb-2 { margin-bottom: .5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mt-1 { margin-top: .25rem; }
+    .mt-2 { margin-top: .5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mt-6, .mt-10 { margin-top: 1.5rem; }
+    .p-4 { padding: 1rem; }
+    .p-6 { padding: clamp(1rem, 3vw, 1.5rem); }
+    .rounded, .rounded-lg { border-radius: .65rem; }
+    .bg-white { background: white; border: 1px solid #dce1e9; }
+    .bg-blue-50 { background: #edf4ff; }
+    .shadow { box-shadow: 0 3px 12px rgba(25, 42, 74, .06); }
+    .space-y-3 > * + * { margin-top: .65rem; }
+    .space-y-4 > * + * { margin-top: .85rem; }
+    .space-y-6 > * + * { margin-top: 1.25rem; }
+    .hidden { display: none !important; }
+    ul { padding-left: 1.4rem; }
+    button { font: inherit; cursor: pointer; color: inherit; }
+    button:focus-visible, a:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 3px; }
+    .quiz-option { display: block; width: 100%; text-align: left; background: #fff; border: 1px solid #aeb9c8; }
+    .nav-link { background: transparent; border: 0; color: #1e4687; text-decoration: underline; padding: .5rem 0; }
+    .quiz-option.selected { border-color: #1e4687; background: #edf4ff; }
+    .quiz-option:hover { background: #f1f6fd; border-color: #5282b9; }
+    .report-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
+    .report-actions button { border: 1px solid #1e4687; border-radius: .45rem; padding: .65rem 1.15rem; color: #1e4687; background: white; }
+    .report-actions button:first-child { color: white; background: #1e4687; }
+    #report-status:empty { display: none; }
+    @media print {
+      body { background: white; color: black; font: 11pt/1.4 system-ui, sans-serif; }
+      body > div { max-width: none; padding: 0; }
+      header { margin: 0 0 1rem; }
+      #report-section, button { display: none !important; }
+      .bg-white, .bg-blue-50 { border: 0; box-shadow: none; padding: 0; }
+      h2, h3, h4 { break-after: avoid; }
+      li, p { orphans: 2; widows: 2; }
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
   <div class="max-w-3xl mx-auto p-6">
     <header class="text-center mb-10">
       <h1 class="text-4xl font-bold text-blue-800">Sleep Patterns Diagnostic</h1>
-      <p class="text-lg mt-2 text-gray-600">Discover the sleep pattern you actually keep — based on science and self-observation.</p>
-      <p class="text-sm mt-1">Inspired by the Sleep Patterns Field Guide. Results are educational, not medical advice.</p>
+      <p class="text-lg mt-2 text-gray-600">Think about the past two weeks. Answer ten questions to see how your nights and naps fit together.</p>
+      <p class="text-sm mt-1">From the Cloud Forest Sleep Patterns Field Guide. This quiz describes adult sleep schedules for educational use.</p>
     </header>
 
+    <noscript><p>This quiz uses JavaScript to show questions and calculate your result. Enable JavaScript in your browser to start.</p></noscript>
     <div id="quiz-section" class="space-y-8">
       <!-- Questions will be injected here -->
     </div>
@@ -31,296 +76,393 @@
       <div id="traditions" class="bg-white p-6 rounded-lg shadow"></div>
     </div>
 
-    <div id="email-section" class="hidden mt-10 bg-white p-6 rounded-lg shadow">
-      <h3 class="text-2xl font-semibold mb-4">Get Your Personalized PDF Report</h3>
-      <p class="mb-4">Enter your email to receive a detailed PDF of your results. By submitting, you agree to receive the report.</p>
-      <form id="email-form" class="space-y-4">
-        <input type="email" id="email" required placeholder="your@email.com" class="w-full p-3 border rounded">
-        <label class="flex items-start gap-2">
-          <input type="checkbox" id="newsletter" class="mt-1">
-          <span>Yes, sign me up for the Cloud Forest newsletter (occasional updates on rest, nature, and well-being). I can unsubscribe anytime.</span>
-        </label>
-        <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">Send PDF to My Email</button>
-      </form>
-      <p id="email-status" class="mt-4 text-sm"></p>
-      <button id="download-pdf" class="mt-4 bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 hidden">Download PDF Now</button>
-    </div>
+    <section id="report-section" class="hidden mt-10 bg-white p-6 rounded-lg shadow" aria-labelledby="report-heading">
+      <h3 id="report-heading">Save your results</h3>
+      <p class="mt-2">Download your sleep pattern and quiz answers to your device.</p>
+      <div class="report-actions">
+        <button id="download-pdf" type="button">Download PDF</button>
+        <button id="print-results" type="button">Print results</button>
+        <button id="restart-quiz" type="button">Retake quiz</button>
+      </div>
+      <p id="report-status" role="status" class="mt-4 text-sm"></p>
+    </section>
   </div>
 
   <script>
     const questions = [
-      { q: "In a typical 24 hours, how many separate times do you sleep?", opts: [
-        { l: "A", t: "Once, at night" },
-        { l: "B", t: "Twice: the night and one daytime sleep" },
-        { l: "C", t: "Three or more times" },
-        { l: "D", t: "It changes too much to count" }
+      { q: "Over the last two weeks, how many separate periods of sleep did you usually have in 24 hours? Count naps and count a long waking interval between two sleeps as a break.", opts: [
+        { l: "A", t: "One sleep period" },
+        { l: "B", t: "Two sleep periods" },
+        { l: "C", t: "Three or more sleep periods" },
+        { l: "D", t: "The number varied from day to day" }
       ]},
-      { q: "When you wake in the middle of the night, what usually happens?", opts: [
-        { l: "A", t: "I roll over and I am asleep again in minutes" },
-        { l: "B", t: "I am awake for an hour or more, and honestly it can be a calm, clear time" },
-        { l: "C", t: "I lie there frustrated, watching the clock" },
-        { l: "D", t: "I rarely sleep long enough at once for a middle to exist" }
+      { q: "If you woke during your main sleep, what usually happened?", opts: [
+        { l: "A", t: "I slept through or fell back asleep within minutes." },
+        { l: "B", t: "I spent a longer stretch awake and felt comfortable." },
+        { l: "C", t: "I wanted to fall back asleep and had trouble doing so." },
+        { l: "D", t: "It varied, or I had no main sleep period." }
       ]},
-      { q: "How is your energy in the early afternoon?", opts: [
-        { l: "A", t: "Steady; I push through fine" },
-        { l: "B", t: "I dip hard and a nap feels necessary, not optional" },
-        { l: "C", t: "I dip, and a short nap fixes me completely" },
-        { l: "D", t: "My energy has no daily pattern I can name" }
+      { q: "How alert did you usually feel in the early afternoon?", opts: [
+        { l: "A", t: "I felt alert." },
+        { l: "B", t: "I felt a dip in energy but stayed awake comfortably." },
+        { l: "C", t: "I felt sleepy enough to want a nap." },
+        { l: "D", t: "I sometimes dozed off without intending to." },
+        { l: "E", t: "It varied, or I usually slept at that time." }
       ]},
-      { q: "Which sentence fits your nights best?", opts: [
-        { l: "A", t: "One solid block, start to finish" },
-        { l: "B", t: "Two blocks with a real wakeful stretch between them" },
-        { l: "C", t: "One main block, but I top up with naps in the day" },
-        { l: "D", t: "Fragments, whenever I can get them" }
+      { q: "How was your sleep usually arranged during those two weeks?", opts: [
+        { l: "A", t: "One main sleep, with or without naps" },
+        { l: "B", t: "Two parts of my main sleep, separated by a long waking interval, with or without naps" },
+        { l: "C", t: "Sleep periods spread around the clock, with no single main sleep" },
+        { l: "D", t: "The timing and arrangement changed too much to describe" }
       ]},
-      { q: "How long is your main sleep, most nights?", opts: [
-        { l: "A", t: "7 to 9 hours" },
-        { l: "B", t: "5.5 to 7 hours, with more sleep in the day" },
-        { l: "C", t: "3 to 5 hours, with naps carrying the rest" },
-        { l: "D", t: "Different every night" }
+      { q: "How long was your longest single sleep period on a typical day?", opts: [
+        { l: "A", t: "At least 6 hours" },
+        { l: "B", t: "At least 3 but under 6 hours" },
+        { l: "C", t: "At least 1 but under 3 hours" },
+        { l: "D", t: "Under 1 hour" },
+        { l: "E", t: "It varied too much to say" }
       ]},
-      { q: "How did your pattern start?", opts: [
-        { l: "A", t: "It is just the normal schedule everyone keeps" },
-        { l: "B", t: "My body did it on its own; I stopped fighting it" },
-        { l: "C", t: "I chose it on purpose, to gain time or to fit my work" },
-        { l: "D", t: "Circumstances imposed it: shifts, a baby, travel, health" }
+      { q: "What most influenced the schedule you kept?", opts: [
+        { l: "A", t: "My usual work or school hours." },
+        { l: "B", t: "The times when I naturally felt sleepy." },
+        { l: "C", t: "A schedule I chose for myself." },
+        { l: "D", t: "Shifts, caregiving, travel or health needs." },
+        { l: "E", t: "Something else, or I am unsure." }
       ]},
-      { q: "What happens on a free weekend with no alarms and no obligations?", opts: [
-        { l: "A", t: "I sleep roughly the same as a weekday" },
-        { l: "B", t: "I sleep in two pieces or add a long midday sleep" },
-        { l: "C", t: "I catch up with a much longer night; I was clearly short" },
-        { l: "D", t: "I sleep at odd hours all weekend and feel worse for it" }
+      { q: "On days without an alarm or a fixed start time, how did your sleep change?", opts: [
+        { l: "A", t: "It stayed roughly the same." },
+        { l: "B", t: "I slept longer or took an extra nap." },
+        { l: "C", t: "I slept at different times." },
+        { l: "D", t: "It varied, or I had no days like that." }
       ]},
-      { q: "How do you feel about daytime sleep?", opts: [
-        { l: "A", t: "I avoid it; it ruins my night" },
-        { l: "B", t: "It is part of my day and I plan around it" },
-        { l: "C", t: "Short naps only, timed and deliberate" },
-        { l: "D", t: "I fall asleep unintentionally, in chairs, in front of screens" }
+      { q: "Apart from your main sleep (including both parts if it was split), what naps did you usually take?", opts: [
+        { l: "A", t: "Usually none" },
+        { l: "B", t: "One short nap of 30 minutes or less" },
+        { l: "C", t: "One longer sleep around midday, usually an hour or more" },
+        { l: "D", t: "One other nap, such as a 45-minute nap or a long sleep outside midday" },
+        { l: "E", t: "Two or more naps" },
+        { l: "F", t: "I had no main sleep period" },
+        { l: "G", t: "It varied too much to say" }
       ]},
-      { q: "When is your mind at its sharpest?", opts: [
-        { l: "A", t: "The morning" },
-        { l: "B", t: "I get two good stretches, with a lull between" },
-        { l: "C", t: "Late evening or the small hours" },
-        { l: "D", t: "No reliable time" }
+      { q: "Adding all periods of sleep, including naps, about how much did you actually sleep in a typical 24 hours?", opts: [
+        { l: "A", t: "7 hours to under 9 hours" },
+        { l: "B", t: "5 hours to under 7 hours" },
+        { l: "C", t: "3 hours to under 5 hours" },
+        { l: "D", t: "Under 3 hours" },
+        { l: "E", t: "9 hours or more" },
+        { l: "F", t: "It varied too much to give a typical total" }
       ]},
-      { q: "If your sleep were a sentence, it would read:", opts: [
-        { l: "A", t: "One long sentence, no breaks" },
-        { l: "B", t: "Two sentences with a pause in the middle" },
-        { l: "C", t: "A sentence with footnotes added during the day" },
-        { l: "D", t: "Fragments. Like this. All day." }
+      { q: "Did you follow any of these specific schedules during those two weeks?", opts: [
+        { l: "A", t: "I followed a different schedule" },
+        { l: "B", t: "Three roughly equal sleep periods of about 90 minutes to 2 hours, spaced around the clock" },
+        { l: "C", t: "One main sleep of about 3 hours plus three naps of about 20 minutes each" },
+        { l: "D", t: "My schedule changed too often to match one of these descriptions" },
+        { l: "E", t: "Only short sleeps at regular intervals: six 20-minute sleeps or four 30-minute sleeps in 24 hours" }
       ]}
     ];
 
     const patterns = {
       monophasic: {
         name: "Monophasic",
-        total: "7 to 9 hours",
-        desc: "One continuous sleep block at night. The modern standard matching work and school schedules.",
-        pros: ["Matches shared schedules", "Full natural cycles of deep sleep and REM", "Easiest socially", "Well studied"],
-        cons: ["Fights afternoon dip with caffeine", "One bad night not repayable until next", "Rigid to disruptions", "Many force it against their rhythm"],
-        who: "Office workers, schoolchildren, fixed-shift people who fall and stay asleep easily.",
-        health: "Strong when total is met."
+        desc: "You usually get your sleep in one main stretch.",
+        track: ["Record when you fall asleep and when you wake for the day.", "Compare workdays with days when you can wake without an alarm."],
+        watch: ["A single block can still be short. Check how much time you actually spend asleep."]
       },
       biphasic_siesta: {
         name: "Biphasic (Siesta)",
-        total: "7 to 8 hours",
-        desc: "Shorter night (6-6.5h) plus 60-90 minute midday sleep. Traditional in hot climates and farming cultures.",
-        pros: ["Works with afternoon dip", "Two rested working halves", "Shorter night frees evening", "Avoids midday heat"],
-        cons: ["Most jobs lack midday gap", "Late full-cycle nap can delay night", "Social stigma as laziness", "Needs quiet dark place"],
-        who: "Hot climates, agricultural workers, Mediterranean/Latin/Chinese lunch-sleep cultures, self-employed early risers.",
-        health: "Strong; matches natural dip."
+        desc: "Your usual day includes a main sleep and a longer daytime sleep.",
+        track: ["Record the start and end of both sleeps.", "Compare days when you can take your usual siesta with days when you miss it."],
+        watch: ["Notice whether your bedtime shifts after a later daytime sleep."]
       },
       biphasic_nap: {
         name: "Biphasic (Nap)",
-        total: "7.5 to 8 hours",
-        desc: "Full night (7-7.5h) plus 20-30 minute early afternoon nap. Deliberate short nap for alertness.",
-        pros: ["Restores evening alertness with little night cost", "Easy to adopt", "Linked to better afternoon memory/mood", "Safety tool for driving"],
-        cons: ["Naps >30 min cause inertia", "After 3pm can delay night", "Needs place to recline", "Some can't nap on demand"],
-        who: "Knowledge workers, parents, older adults, drivers/clinicians, high performers with decent nights but sagging afternoons.",
-        health: "Strong; low-risk upgrade."
+        desc: "Your usual day includes a main sleep and a short nap.",
+        track: ["Record how long the nap lasts and how you feel afterward."],
+        watch: ["Distinguish a nap you planned from a time you fell asleep without meaning to."]
       },
       segmented: {
         name: "Segmented",
-        total: "6.5 to 7.5 hours",
-        desc: "Two night blocks (e.g. 9:30pm-1am and 3am-6:30am) with 1-3 wakeful hours between. Pre-industrial pattern.",
-        pros: ["Matches body without artificial light", "Calm clear middle hours prized for thought/prayer", "Shorter blocks easier for some", "Historically normal, no debt if total enough"],
-        cons: ["Middle can be ruined by phone/light", "Hard if partner keeps single block", "Modern start times punish late second sleep", "Doctors may misread as insomnia"],
-        who: "Natural small-hours wakers, pre-1850 people, monastics, writers, older adults, parents of broken nights.",
-        health: "Good when total met."
+        desc: "You describe two main sleep periods separated by time awake during the night.",
+        track: ["Write down when you wake between the two periods and when you fall asleep again."],
+        watch: ["Count the time asleep in both periods. Time awake between them can make time in bed a misleading total.", "If the waking bothers you or interferes with your day, mention it at a healthcare visit."]
       },
       segmented_naps: {
         name: "Segmented plus Naps (Mixed)",
-        total: "7 to 8.5 hours",
-        desc: "Two night blocks with wakeful middle, plus one or more short daytime naps. Common real-world hybrid.",
-        pros: ["Flexible, gaps filled when available", "Naps repay debt quickly", "Middle hours usable", "Fits self-directed work"],
-        cons: ["Total can quietly shrink", "Irregular timing drifts clock", "Evening naps cost night", "Hard to explain to doctors/employers"],
-        who: "Self-employed, parents, caregivers, bursty work, natural segmented sleepers who add naps.",
-        health: "Good if total honestly tracked."
+        desc: "You describe two sleep periods at night and additional sleep during the day.",
+        track: ["Record the two nighttime stretches and any daytime naps separately."],
+        watch: ["Count how much of the night you spend awake and whether daytime naps are planned or unintentional."]
       },
       triphasic: {
         name: "Triphasic",
-        total: "4.5 to 5.5 hours",
-        desc: "Three sleeps of ~90min-2h spaced around the clock. Gentlest reduced schedule.",
-        pros: ["Sleep near each natural dip", "Frees large waking time", "Blocks allow deep + REM", "More forgiving than extremes"],
-        cons: ["Still below need for most", "Three fixed appointments rule the day", "Socially isolating", "1-2 rough adaptation weeks"],
-        who: "Solo workers on deadlines, sailors/racers, experimenters with full schedule control.",
-        health: "Below need for most."
+        desc: "You described three distinct sleep periods in a typical 24 hours.",
+        track: ["Record the timing and length of each sleep period and add up the hours."],
+        watch: ["Three sleep periods alone tell you little about whether you get enough sleep."]
       },
       everyman: {
-        name: "Everyman",
-        total: "~3.7 hours",
-        desc: "Core ~3h sleep plus three 20-min naps. Best-known polyphasic.",
-        pros: ["Frees 4+ waking hours", "Core protects some deep sleep", "Short naps fit breaks"],
-        cons: ["Far below need; memory/mood/reaction losses", "Miserable adaptation, common failure", "One missed nap collapses day", "Long-term effects unstudied/likely poor"],
-        who: "Students in crunch, programmers/founders in sprints, self-experimenters accepting risk.",
-        health: "Poor; chronic restriction."
+        name: "Everyman-style schedule",
+        desc: "The Field Guide uses this name for a short core sleep with several short, scheduled naps.",
+        track: ["Include each nap you actually take when you add up your daily sleep."],
+        watch: ["Schedules built around a short core sleep and brief naps can leave too little time asleep."]
       },
       uberman: {
-        name: "Uberman / Dymaxion",
-        total: "2 hours",
-        desc: "Naps only (six 20-min or four 30-min), evenly spaced. Extreme limit case.",
-        pros: ["Maximum waking time", "Interesting as adaptability test"],
-        cons: ["Severe chronic deprivation", "Dangerous for driving/safety work within days", "Socially impossible", "Almost no one sustains long-term"],
-        who: "Almost no one durably. Cautionary tale.",
-        health: "Severe deprivation."
+        name: "Uberman / Dymaxion-style schedule",
+        desc: "The Field Guide groups these schedules together because sleep is divided into short, regularly spaced naps without a main sleep.",
+        track: ["Count each sleep episode across a full 24 hours."],
+        watch: ["A naps-only schedule can leave you severely short of sleep."]
       },
       irregular: {
-        name: "Irregular / Free-running",
-        total: "Varies, often low",
-        desc: "Sleep whenever it comes, shifting times. Not chosen: shifts, newborns, travel, clock disorders.",
-        pros: ["Fits chaotic work", "At least taken when demanded", "Short-season survival mode"],
-        cons: ["Worst health profile (heart, diabetes, accidents)", "Sleep at wrong phase less restorative", "Mood/family damage", "Entrenches itself"],
-        who: "Rotating shifts, nurses, new parents, long-haul travelers, delayed/non-24 disorders.",
-        health: "Worst of the list."
+        name: "Irregular sleep schedule",
+        desc: "The timing or arrangement of your sleep varies substantially from day to day.",
+        track: ["Keep a diary across both workdays and days off.", "Note shifts, caregiving or other interruptions alongside the sleep times."],
+        watch: ["A changing schedule can make your total hours and episodes of daytime sleepiness easy to overlook."]
+      },
+      biphasic_other: {
+        name: "Biphasic (Main Sleep and One Nap)",
+        desc: "You usually have one main sleep and one additional nap.",
+        track: ["Write down when the nap starts, how long you sleep and when you next go to bed."],
+        watch: ["Include naps on both workdays and free days when comparing your totals."]
+      },
+      polyphasic_other: {
+        name: "Multiple Sleep Periods",
+        desc: "You usually sleep in three or more periods across a full day.",
+        track: ["Add up the time you actually spend asleep across all periods."],
+        watch: ["The number of sleep periods alone tells you little about total sleep or daytime alertness."]
+      },
+      unclear: {
+        name: "Mixed or Unclear Pattern",
+        desc: "Your answers describe more than one arrangement or leave some details uncertain. A week of sleep and wake times may make the pattern easier to see.",
+        track: ["Record a workday and a day off separately. Include naps and any long periods awake."],
+        watch: ["Look for differences in your answers about the number of sleeps, the length of the longest sleep and the full-day total."]
       }
     };
 
     let answers = [];
     let current = 0;
 
-    function renderQuestion() {
-      const sec = document.getElementById('quiz-section');
-      if (current >= questions.length) {
+    function renderQuestion(moveFocus = false) {
+      const section = document.getElementById('quiz-section');
+      if (current === questions.length) {
         showResults();
+        const heading = document.querySelector('#results-section h2');
+        heading.tabIndex = -1;
+        heading.focus();
         return;
       }
-      const q = questions[current];
-      sec.innerHTML = `
+      const question = questions[current];
+      section.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow">
-          <p class="text-sm text-gray-500 mb-2">Question ${current + 1} of ${questions.length}</p>
-          <h3 class="text-xl font-semibold mb-4">${q.q}</h3>
+          <p id="question-progress" class="text-sm text-gray-500 mb-2">Question ${current + 1} of ${questions.length}</p>
+          <h3 tabindex="-1" aria-describedby="question-progress" class="text-xl font-semibold mb-4">${question.q}</h3>
           <div class="space-y-3">
-            ${q.opts.map((o, i) => `
-              <button class="quiz-option w-full text-left p-4 border rounded-lg hover:border-blue-400" data-letter="${o.l}" onclick="selectAnswer('${o.l}')">
-                <strong>${o.l}.</strong> ${o.t}
+            ${question.opts.map(option => `
+              <button type="button" class="quiz-option w-full text-left p-4 border rounded-lg hover:border-blue-400${answers[current] === option.l ? ' selected' : ''}" data-letter="${option.l}" aria-pressed="${answers[current] === option.l}">
+                <strong>${option.l}.</strong> ${option.t}
               </button>
             `).join('')}
           </div>
+          ${current > 0 ? '<button type="button" id="previous-question" class="nav-link mt-4">Back one question</button>' : ''}
         </div>
       `;
+      if (moveFocus) section.querySelector('h3').focus();
     }
 
-    function selectAnswer(letter) {
-      answers[current] = letter;
-      current++;
-      renderQuestion();
-    }
+    document.getElementById('quiz-section').addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.id === 'previous-question') {
+        current--;
+      } else if (button.dataset.letter) {
+        answers[current] = button.dataset.letter;
+        current++;
+      } else return;
+      renderQuestion(true);
+    });
 
     function scorePattern() {
-      const counts = { A:0, B:0, C:0, D:0 };
-      answers.forEach(a => counts[a]++);
-      const max = Math.max(...Object.values(counts));
-      const mostly = Object.keys(counts).filter(k => counts[k] === max);
-      let pattern = 'monophasic';
-      if (mostly.includes('A') && counts.A >= counts.B && counts.A >= counts.C) {
-        pattern = 'monophasic';
-      } else if (mostly.includes('B') || counts.B > counts.A) {
-        if (answers[3] === 'B') {
-          pattern = answers[7] === 'B' || answers[7] === 'C' ? 'segmented_naps' : 'segmented';
-        } else {
-          pattern = 'biphasic_siesta';
-        }
-      } else if (mostly.includes('C') || counts.C > 4) {
-        pattern = counts.C > 6 ? 'everyman' : 'triphasic';
-      } else if (mostly.includes('D')) {
-        pattern = 'irregular';
+      const [count, , , layout, longest, , , naps, total, namedSchedule] = answers;
+      // A named schedule requires both an explicit match and a compatible sleep record.
+      if (namedSchedule === 'B') {
+        return count === 'C' && layout === 'C' && longest === 'C' && naps === 'F' && ['B', 'C', 'F'].includes(total)
+          ? 'triphasic' : 'unclear';
       }
-      if (answers[3] === 'B' && (answers[7] === 'B' || answers[7] === 'C')) pattern = 'segmented_naps';
-      if (answers[3] === 'A' && answers[7] === 'C') pattern = 'biphasic_nap';
-      return pattern;
+      if (namedSchedule === 'C') {
+        return count === 'C' && layout === 'A' && (longest === 'B' || longest === 'C') && naps === 'E' && ['C', 'F'].includes(total)
+          ? 'everyman' : 'unclear';
+      }
+      if (namedSchedule === 'E') {
+        return count === 'C' && layout === 'C' && longest === 'D' && naps === 'F' && ['D', 'F'].includes(total)
+          ? 'uberman' : 'unclear';
+      }
+
+      // Ranges use an inclusive lower bound and an exclusive upper bound.
+      const longestRanges = { A: [6, Infinity], B: [3, 6], C: [1, 3], D: [0, 1] };
+      const totalRanges = { A: [7, 9], B: [5, 7], C: [3, 5], D: [0, 3], E: [9, Infinity] };
+      if (longestRanges[longest] && totalRanges[total]) {
+        const [minPeriod, maxPeriod] = longestRanges[longest];
+        const [minTotal, maxTotal] = totalRanges[total];
+        let maxDay = Infinity;
+        if (count === 'A') maxDay = maxPeriod;
+        if (count === 'B') maxDay = 2 * maxPeriod;
+        if (count === 'B' && layout === 'A' && naps === 'B') maxDay = Math.min(maxDay, maxPeriod + 0.5);
+        if (minPeriod >= maxTotal || minTotal >= maxDay) return 'unclear';
+      }
+      if (layout === 'D') return 'irregular';
+      if (namedSchedule === 'D') return 'unclear';
+      const singleNap = { B: 'biphasic_nap', C: 'biphasic_siesta', D: 'biphasic_other' };
+      if (layout === 'A') {
+        if (count === 'A' && naps === 'A') return 'monophasic';
+        if (count === 'B' && singleNap[naps]) return singleNap[naps];
+        if (count === 'C' && naps === 'E') return 'polyphasic_other';
+      }
+      if (layout === 'B') {
+        if (count === 'B' && naps === 'A') return 'segmented';
+        if (count === 'C' && (singleNap[naps] || naps === 'E')) return 'segmented_naps';
+      }
+      if (layout === 'C' && count === 'C' && naps === 'F') return 'polyphasic_other';
+      return 'unclear';
     }
 
     function showResults() {
       document.getElementById('quiz-section').classList.add('hidden');
       const key = scorePattern();
-      const p = patterns[key] || patterns.monophasic;
+      const p = patterns[key];
+      const duration = questions[8].opts.find(option => option.l === answers[8]).t;
       const sum = document.getElementById('pattern-summary');
       sum.innerHTML = `
         <h3 class="text-2xl font-bold">${p.name}</h3>
         <p class="mt-2 text-lg">${p.desc}</p>
-        <p class="mt-2"><strong>Typical total:</strong> ${p.total}</p>
-        <p><strong>Health standing:</strong> ${p.health}</p>
-        <p class="mt-4"><strong>Who usually keeps it:</strong> ${p.who}</p>
+        <p class="mt-4"><strong>Your reported sleep in 24 hours</strong><br>${duration}</p>
+        <p class="mt-2"><strong>Your afternoon alertness</strong><br>${questions[2].opts.find(option => option.l === answers[2]).t}</p>
       `;
       const det = document.getElementById('detailed-info');
       det.innerHTML = `
-        <h4 class="text-xl font-semibold">Pros</h4>
-        <ul class="list-disc pl-5">${p.pros.map(x => `<li>${x}</li>`).join('')}</ul>
-        <h4 class="text-xl font-semibold mt-4">Cons</h4>
-        <ul class="list-disc pl-5">${p.cons.map(x => `<li>${x}</li>`).join('')}</ul>
+        <h3 class="text-xl font-semibold">What to track</h3>
+        <ul class="list-disc pl-5">${p.track.map(item => `<li>${item}</li>`).join('')}</ul>
+        <h3 class="text-xl font-semibold mt-4">What to watch for</h3>
+        <ul class="list-disc pl-5">${p.watch.map(item => `<li>${item}</li>`).join('')}</ul>
         <div class="mt-6 p-4 bg-blue-50 rounded">
-          <h4 class="font-semibold">Key reminders from the science</h4>
-          <ul class="list-disc pl-5 mt-2 text-sm">
-            <li>Adults generally need 7–9 hours. Shape matters less than total, regularity, and alignment with your clock.</li>
-            <li>Watch for sleep apnea signs: loud snoring, breathing pauses, morning headaches, daytime sleepiness despite enough hours.</li>
-            <li>Drowsy driving after 18–20 hours awake matches illegal alcohol impairment.</li>
-            <li>No reduced-sleep schedule has been shown safe long-term in controlled studies.</li>
-            <li>To change patterns: small steps (20–30 min), fixed wake time, bright morning light, dim evening light, early short naps, track total for 2 weeks.</li>
-          </ul>
+          <h4 class="font-semibold">Putting your result in context</h4>
+          <p class="mt-2">Most adults ages 18–60 need at least seven hours of sleep each night. Age, sleep quality and how you feel during the day matter too.</p>
+          <p class="mt-2">If you often doze off unintentionally or regularly feel tired after a full night, discuss it with a healthcare professional. Avoid driving when you feel sleepy.</p>
+          <p class="mt-2">Research has found no established benefit from cutting sleep into multiple short sessions to gain waking hours.</p>
+          <p class="mt-2 text-sm"><a href="https://www.cdc.gov/sleep/about/">CDC adult sleep guidance</a> · <a href="https://pubmed.ncbi.nlm.nih.gov/33795195/">Sleep timing consensus report</a></p>
         </div>
       `;
-      const trad = document.getElementById('traditions');
-      trad.innerHTML = `
-        <h3 class="text-xl font-semibold">Tradition lenses (reflection only, not science)</h3>
-        <p class="mt-2 text-sm">Western astrology, Chinese zodiac/TCM clock, and Human Design each have internal teachings about rest. If your sign/type points at the pattern you keep, it can help you defend and hold it. Part One science outranks tradition. Total sleep, regularity, and how you feel in the morning are the evidence that counts.</p>
-        <p class="mt-2 text-sm">Examples: Earth signs / Ox-Rooster-Goat / Generators often monophasic; Air signs / Rat-Snake / Manifestors often segmented; etc. Read the full guide for details.</p>
+      document.getElementById('traditions').innerHTML = `
+        <h3 class="text-xl font-semibold">From the Sleep Patterns Field Guide</h3>
+        <p class="mt-2">The guide also explores rest through Western astrology, the traditional Chinese body clock and Human Design. You can use those traditions as prompts for reflection. Your quiz result comes from the sleep schedule you described.</p>
       `;
       document.getElementById('results-section').classList.remove('hidden');
-      document.getElementById('email-section').classList.remove('hidden');
+      document.getElementById('report-section').classList.remove('hidden');
       window.currentPattern = key;
-      window.currentAnswers = answers.join('');
     }
 
-    document.getElementById('email-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const consent = document.getElementById('newsletter').checked;
-      const status = document.getElementById('email-status');
-      status.textContent = 'Preparing your report...';
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const p = patterns[window.currentPattern];
-      doc.setFontSize(20);
-      doc.text('Sleep Patterns Diagnostic Report', 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Pattern: ${p.name}`, 20, 40);
-      doc.text(`Total: ${p.total}`, 20, 50);
-      doc.text(p.desc, 20, 65, { maxWidth: 170 });
-      doc.text('Pros:', 20, 90);
-      p.pros.forEach((pr, i) => doc.text(`- ${pr}`, 25, 100 + i*8));
-      doc.text('Cons:', 20, 140);
-      p.cons.forEach((c, i) => doc.text(`- ${c}`, 25, 150 + i*8));
-      doc.text('This report is educational. Consult a doctor for medical concerns.', 20, 200);
-      doc.text('Cloud Forest | Sleep Patterns Tool', 20, 220);
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Sleep-Pattern-Report-${window.currentPattern}.pdf`;
-      a.click();
-      status.textContent = `PDF downloaded. In a full deployment, it would also be emailed to ${email}. Newsletter consent: ${consent ? 'Yes' : 'No'}.`;
-      document.getElementById('download-pdf').classList.remove('hidden');
-      document.getElementById('download-pdf').onclick = () => a.click();
+    // The report uses standard PDF fonts and ASCII content so byte offsets stay exact.
+    function reportPdf() {
+      const context = document.createElement('canvas').getContext('2d');
+      const pages = [[]];
+      let y = 742;
+
+      function pdfText(value) {
+        return value.replace(/[–—−]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+          .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, ' ');
+      }
+
+      function escapeText(value) {
+        return value.replace(/[()\\]/g, '\\$&');
+      }
+
+      function paragraph(value, size = 11, bold = false, indent = 0, gap = 4) {
+        const leading = size + 4;
+        context.font = (bold ? 'bold ' : '') + size + 'px Arial, sans-serif';
+        const words = pdfText(value).trim().split(/\s+/);
+        let line = '';
+        function writeLine() {
+          if (y < 56 || (bold && y < 90)) { pages.push([]); y = 742; }
+          pages[pages.length - 1].push(
+            'BT /' + (bold ? 'F2' : 'F1') + ' ' + size + ' Tf 1 0 0 1 ' +
+            (48 + indent) + ' ' + y + ' Tm (' + escapeText(line) + ') Tj ET'
+          );
+          y -= leading;
+          line = '';
+        }
+        for (const word of words) {
+          const next = line ? line + ' ' + word : word;
+          if (line && context.measureText(next).width > 505 - indent) writeLine();
+          line = line ? line + ' ' + word : word;
+        }
+        if (line) writeLine();
+        y -= gap;
+      }
+
+      paragraph('Cloud Forest | Sleep Patterns Field Guide', 10);
+      paragraph('Your sleep pattern report', 21, true, 0, 9);
+      const resultNodes = document.querySelectorAll('#results-section h3, #results-section h4, #results-section p, #results-section li');
+      for (const node of resultNodes) {
+        if (node.matches('h3, h4')) paragraph(node.innerText, 14, true);
+        else if (node.matches('li')) paragraph('- ' + node.innerText, 11, false, 8, 2);
+        else paragraph(node.innerText);
+      }
+      pages.push([]);
+      y = 742;
+      paragraph('Your quiz answers', 18, true, 0, 9);
+      questions.forEach((question, i) => {
+        const selected = question.opts.find(option => option.l === answers[i]);
+        paragraph((i + 1) + '. ' + question.q, 11, true, 0, 1);
+        paragraph(selected ? selected.t : 'Unanswered', 11, false, 12, 6);
+      });
+
+      const objects = [];
+      const pageIds = pages.map((_, i) => 5 + i * 2);
+      objects.push('<< /Type /Catalog /Pages 2 0 R >>');
+      objects.push('<< /Type /Pages /Count ' + pages.length + ' /Kids [' + pageIds.map(id => id + ' 0 R').join(' ') + '] >>');
+      objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+      objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+      pages.forEach((lines, i) => {
+        lines.push('BT /F1 9 Tf 1 0 0 1 48 32 Tm (Cloud Forest  |  ' + (i + 1) + ' of ' + pages.length + ') Tj ET');
+        const stream = lines.join('\n') + '\n';
+        objects.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + (pageIds[i] + 1) + ' 0 R >>');
+        objects.push('<< /Length ' + stream.length + ' >>\nstream\n' + stream + 'endstream');
+      });
+      let file = '%PDF-1.4\n';
+      const offsets = [0];
+      objects.forEach((object, i) => {
+        offsets.push(file.length);
+        file += (i + 1) + ' 0 obj\n' + object + '\nendobj\n';
+      });
+      const startXref = file.length;
+      file += 'xref\n0 ' + offsets.length + '\n0000000000 65535 f \n';
+      for (const offset of offsets.slice(1)) file += String(offset).padStart(10, '0') + ' 00000 n \n';
+      file += 'trailer\n<< /Size ' + offsets.length + ' /Root 1 0 R >>\nstartxref\n' + startXref + '\n%%EOF\n';
+      return new Blob([file], { type: 'application/pdf' });
+    }
+
+    document.getElementById('download-pdf').addEventListener('click', () => {
+      const status = document.getElementById('report-status');
+      try {
+        const url = URL.createObjectURL(reportPdf());
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Sleep-Pattern-Report-' + window.currentPattern + '.pdf';
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        status.textContent = 'Your PDF is ready. If the download did not open, choose Print results to save a copy.';
+      } catch {
+        status.textContent = 'The PDF download is unavailable in this browser. Choose Print results to save a copy.';
+      }
+    });
+    document.getElementById('print-results').addEventListener('click', () => window.print());
+
+    document.getElementById('restart-quiz').addEventListener('click', () => {
+      answers = [];
+      current = 0;
+      document.getElementById('report-status').textContent = '';
+      document.getElementById('report-section').classList.add('hidden');
+      document.getElementById('results-section').classList.add('hidden');
+      document.getElementById('quiz-section').classList.remove('hidden');
+      renderQuestion(true);
     });
 
     renderQuestion();

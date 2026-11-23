@@ -1,15 +1,9 @@
 # Sleep Patterns Diagnostic Tool
 
-Interactive quiz to determine your sleep pattern based on the Field Guide.
+[Open the Cloud Forest sleep-pattern quiz](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/)
 
-**Live site (after enabling Pages):** https://mike-cloudforest.github.io/sleep-patterns-diagnostic/
+The ten-question quiz describes the sleep schedule a visitor reports over the past two weeks. Results include the reported total sleep, observations to track, and a printable or downloadable report with all ten answers. The quiz is educational and does not diagnose sleep disorders.
 
-## Enable GitHub Pages
-1. Go to Settings → Pages
-2. Source: Deploy from a branch → main / root
-   OR use the GitHub Actions workflow (recommended)
-3. Save and wait a minute.
+## Run locally
 
-Then share: https://mike-cloudforest.github.io/sleep-patterns-diagnostic/
-
-The index.html is in the root. A workflow is also included to deploy via Actions.
+Open `index.html` in a browser with JavaScript enabled. The quiz, styling, scoring, and PDF download are self-contained. Answers stay in browser memory until the visitor reloads or starts over. The app sends no email and stores no responses.
