@@ -2,7 +2,7 @@
 
 [Open the Cloud Forest sleep-pattern quiz](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/)
 
-The ten-question quiz describes the sleep schedule a visitor reports over the past two weeks. Results include the reported total sleep, observations to track, and a printable or downloadable report with all ten answers. The quiz is educational and does not diagnose sleep disorders.
+The quiz asks how someone slept over the past two weeks and shows follow-up questions that fit their routine. Results include their reported sleep total, observations to track, and a printable or downloadable report with their answers. The quiz is educational and does not diagnose sleep disorders.
 
 ## Run locally
 

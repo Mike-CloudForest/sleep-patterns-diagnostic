@@ -41,6 +41,7 @@
     .nav-link { background: transparent; border: 0; color: #1e4687; text-decoration: underline; padding: .5rem 0; }
     .quiz-option.selected { border-color: #1e4687; background: #edf4ff; }
     .quiz-option:hover { background: #f1f6fd; border-color: #5282b9; }
+    .review-actions { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin-top: .5rem; }
     .report-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
     .report-actions button { border: 1px solid #1e4687; border-radius: .45rem; padding: .65rem 1.15rem; color: #1e4687; background: white; }
     .report-actions button:first-child { color: white; background: #1e4687; }
@@ -60,7 +61,7 @@
   <div class="max-w-3xl mx-auto p-6">
     <header class="text-center mb-10">
       <h1 class="text-4xl font-bold text-blue-800">Sleep Patterns Diagnostic</h1>
-      <p class="text-lg mt-2 text-gray-600">Think about the past two weeks. Answer ten questions to see how your nights and naps fit together.</p>
+      <p class="text-lg mt-2 text-gray-600">Think about how you slept over the past two weeks. Choose what happened most days.</p>
       <p class="text-sm mt-1">From the Cloud Forest Sleep Patterns Field Guide. This quiz describes adult sleep schedules for educational use.</p>
     </header>
 
@@ -90,75 +91,123 @@
 
   <script>
     const questions = [
-      { q: "Over the last two weeks, how many separate periods of sleep did you usually have in 24 hours? Count naps and count a long waking interval between two sleeps as a break.", opts: [
-        { l: "A", t: "One sleep period" },
-        { l: "B", t: "Two sleep periods" },
-        { l: "C", t: "Three or more sleep periods" },
-        { l: "D", t: "The number varied from day to day" }
-      ]},
-      { q: "If you woke during your main sleep, what usually happened?", opts: [
-        { l: "A", t: "I slept through or fell back asleep within minutes." },
-        { l: "B", t: "I spent a longer stretch awake and felt comfortable." },
-        { l: "C", t: "I wanted to fall back asleep and had trouble doing so." },
-        { l: "D", t: "It varied, or I had no main sleep period." }
-      ]},
-      { q: "How alert did you usually feel in the early afternoon?", opts: [
-        { l: "A", t: "I felt alert." },
-        { l: "B", t: "I felt a dip in energy but stayed awake comfortably." },
-        { l: "C", t: "I felt sleepy enough to want a nap." },
-        { l: "D", t: "I sometimes dozed off without intending to." },
-        { l: "E", t: "It varied, or I usually slept at that time." }
-      ]},
-      { q: "How was your sleep usually arranged during those two weeks?", opts: [
-        { l: "A", t: "One main sleep, with or without naps" },
-        { l: "B", t: "Two parts of my main sleep, separated by a long waking interval, with or without naps" },
-        { l: "C", t: "Sleep periods spread around the clock, with no single main sleep" },
-        { l: "D", t: "The timing and arrangement changed too much to describe" }
-      ]},
-      { q: "How long was your longest single sleep period on a typical day?", opts: [
-        { l: "A", t: "At least 6 hours" },
-        { l: "B", t: "At least 3 but under 6 hours" },
-        { l: "C", t: "At least 1 but under 3 hours" },
-        { l: "D", t: "Under 1 hour" },
-        { l: "E", t: "It varied too much to say" }
-      ]},
-      { q: "What most influenced the schedule you kept?", opts: [
-        { l: "A", t: "My usual work or school hours." },
-        { l: "B", t: "The times when I naturally felt sleepy." },
-        { l: "C", t: "A schedule I chose for myself." },
-        { l: "D", t: "Shifts, caregiving, travel or health needs." },
-        { l: "E", t: "Something else, or I am unsure." }
-      ]},
-      { q: "On days without an alarm or a fixed start time, how did your sleep change?", opts: [
-        { l: "A", t: "It stayed roughly the same." },
-        { l: "B", t: "I slept longer or took an extra nap." },
-        { l: "C", t: "I slept at different times." },
-        { l: "D", t: "It varied, or I had no days like that." }
-      ]},
-      { q: "Apart from your main sleep (including both parts if it was split), what naps did you usually take?", opts: [
-        { l: "A", t: "Usually none" },
-        { l: "B", t: "One short nap of 30 minutes or less" },
-        { l: "C", t: "One longer sleep around midday, usually an hour or more" },
-        { l: "D", t: "One other nap, such as a 45-minute nap or a long sleep outside midday" },
-        { l: "E", t: "Two or more naps" },
-        { l: "F", t: "I had no main sleep period" },
-        { l: "G", t: "It varied too much to say" }
-      ]},
-      { q: "Adding all periods of sleep, including naps, about how much did you actually sleep in a typical 24 hours?", opts: [
-        { l: "A", t: "7 hours to under 9 hours" },
-        { l: "B", t: "5 hours to under 7 hours" },
-        { l: "C", t: "3 hours to under 5 hours" },
-        { l: "D", t: "Under 3 hours" },
-        { l: "E", t: "9 hours or more" },
-        { l: "F", t: "It varied too much to give a typical total" }
-      ]},
-      { q: "Did you follow any of these specific schedules during those two weeks?", opts: [
-        { l: "A", t: "I followed a different schedule" },
-        { l: "B", t: "Three roughly equal sleep periods of about 90 minutes to 2 hours, spaced around the clock" },
-        { l: "C", t: "One main sleep of about 3 hours plus three naps of about 20 minutes each" },
-        { l: "D", t: "My schedule changed too often to match one of these descriptions" },
-        { l: "E", t: "Only short sleeps at regular intervals: six 20-minute sleeps or four 30-minute sleeps in 24 hours" }
-      ]}
+      {
+        id: 'layout',
+        q: 'How did you get most of your sleep?',
+        help: 'A quick bathroom break still counts as part of the same stretch. If you work nights, think about when you sleep during the day.',
+        opts: [
+          { l: 'A', t: 'In one long stretch.' },
+          { l: 'B', t: 'In two stretches, with a long break in between.' },
+          { l: 'C', t: 'In three or more short stretches spread through the day and night.' },
+          { l: 'D', t: 'It changed from day to day.' },
+          { l: 'E', t: 'I’m not sure which fits.' }
+        ]
+      },
+      {
+        id: 'naps',
+        q: 'How often did you take a nap?',
+        opts: [
+          { l: 'A', t: 'Rarely or never' },
+          { l: 'B', t: 'Some days' },
+          { l: 'C', t: 'Most days' },
+          { l: 'D', t: 'I’m not sure' }
+        ]
+      },
+      {
+        id: 'napType',
+        q: 'What kind of nap did you usually take?',
+        opts: [
+          { l: 'A', t: 'One nap of 30 minutes or less' },
+          { l: 'B', t: 'One nap longer than 30 minutes but under an hour' },
+          { l: 'C', t: 'One nap of an hour or more around midday' },
+          { l: 'D', t: 'One nap of an hour or more at another time' },
+          { l: 'E', t: 'Two or more naps' },
+          { l: 'F', t: 'It varied, or I’m not sure' }
+        ]
+      },
+      {
+        id: 'longest',
+        q: 'How long was your longest stretch of sleep on a typical day?',
+        help: 'For exactly 3 hours, choose 3–6. For exactly 6 hours, choose 6 or more.',
+        opts: [
+          { l: 'D', t: 'Less than an hour' },
+          { l: 'C', t: '1–3 hours' },
+          { l: 'B', t: '3–6 hours' },
+          { l: 'A', t: '6 hours or more' },
+          { l: 'E', t: 'It varied, or I’m not sure' }
+        ]
+      },
+      {
+        id: 'total',
+        q: 'How much sleep did you usually get in 24 hours, including naps?',
+        help: 'At exactly 5, 7 or 9 hours, use the range that starts there.',
+        opts: [
+          { l: 'D', t: 'Less than 3 hours' },
+          { l: 'C', t: '3–5 hours' },
+          { l: 'B', t: '5–7 hours' },
+          { l: 'A', t: '7–9 hours' },
+          { l: 'E', t: '9 hours or more' },
+          { l: 'F', t: 'It varied, or I’m not sure' }
+        ]
+      },
+      {
+        id: 'waking',
+        q: 'When you woke up, was it easy to fall back asleep?',
+        opts: [
+          { l: 'A', t: 'I usually slept through.' },
+          { l: 'B', t: 'I fell back asleep easily.' },
+          { l: 'C', t: 'I stayed awake for a while and felt comfortable.' },
+          { l: 'D', t: 'I wanted to go back to sleep but had trouble drifting off.' },
+          { l: 'E', t: 'It varied, or I’m not sure.' }
+        ]
+      },
+      {
+        id: 'alertness',
+        q: 'How did you usually feel in the early afternoon?',
+        opts: [
+          { l: 'A', t: 'I felt alert.' },
+          { l: 'B', t: 'I felt a little tired but could easily stay awake.' },
+          { l: 'C', t: 'I felt sleepy enough to want a nap.' },
+          { l: 'D', t: 'I sometimes nodded off without meaning to.' },
+          { l: 'E', t: 'I was usually asleep at that time.' },
+          { l: 'F', t: 'It was different from day to day.' }
+        ]
+      },
+      {
+        id: 'influence',
+        q: 'What usually set your sleep schedule?',
+        opts: [
+          { l: 'A', t: 'Regular work or school hours' },
+          { l: 'B', t: 'When I naturally felt sleepy' },
+          { l: 'C', t: 'A routine I set for myself' },
+          { l: 'D', t: 'Night shifts or changing shifts' },
+          { l: 'E', t: 'Caregiving, travel or health needs' },
+          { l: 'F', t: 'Something else, or I’m not sure' }
+        ]
+      },
+      {
+        id: 'freeDays',
+        q: 'How did you sleep when you could get up whenever you wanted?',
+        opts: [
+          { l: 'A', t: 'I slept about the same as usual.' },
+          { l: 'B', t: 'I got more or less sleep, but my schedule was similar.' },
+          { l: 'C', t: 'I got about the same amount of sleep, just at different times.' },
+          { l: 'D', t: 'I slept a different amount and at different times.' },
+          { l: 'E', t: 'I didn’t have a day like that.' },
+          { l: 'F', t: 'It varied, or I’m not sure.' }
+        ]
+      },
+      {
+        id: 'schedule',
+        q: 'Did any of these schedules match a typical day for you?',
+        opts: [
+          { l: 'B', t: 'Three sleeps of about 90 minutes to 2 hours each, spread evenly across 24 hours' },
+          { l: 'C', t: 'One sleep of about 3 hours, plus three 20-minute naps' },
+          { l: 'E', t: 'Only short naps spaced evenly through the day and night (six 20-minute naps or four 30-minute naps)' },
+          { l: 'A', t: 'None of these' },
+          { l: 'F', t: 'I’m not sure' }
+        ]
+      }
     ];
 
     const patterns = {
@@ -182,15 +231,15 @@
       },
       segmented: {
         name: "Segmented",
-        desc: "You describe two main sleep periods separated by time awake during the night.",
+        desc: "You usually sleep for a stretch, spend some time awake, then go back to sleep.",
         track: ["Write down when you wake between the two periods and when you fall asleep again."],
         watch: ["Count the time asleep in both periods. Time awake between them can make time in bed a misleading total.", "If the waking bothers you or interferes with your day, mention it at a healthcare visit."]
       },
       segmented_naps: {
         name: "Segmented plus Naps (Mixed)",
-        desc: "You describe two sleep periods at night and additional sleep during the day.",
-        track: ["Record the two nighttime stretches and any daytime naps separately."],
-        watch: ["Count how much of the night you spend awake and whether daytime naps are planned or unintentional."]
+        desc: "You usually sleep in two stretches with time awake in between. You also nap on most days.",
+        track: ["Write down both stretches and any extra naps separately."],
+        watch: ["Notice how long you spend awake between stretches and whether you planned to nap."]
       },
       triphasic: {
         name: "Triphasic",
@@ -228,112 +277,220 @@
         track: ["Add up the time you actually spend asleep across all periods."],
         watch: ["The number of sleep periods alone tells you little about total sleep or daytime alertness."]
       },
+      occasional_naps: {
+        name: "One main sleep, with occasional naps",
+        desc: "Most of your sleep comes in one stretch. On some days, you also take a nap.",
+        track: ["Record when you sleep and which days you nap."],
+        watch: ["See whether you nap more often on days off or after a shorter sleep."]
+      },
+      main_sleep: {
+        name: "One main stretch of sleep",
+        desc: "You usually get most of your sleep in one stretch.",
+        track: ["Write down your main sleep and any naps."],
+        watch: ["See whether your naps follow a pattern across the week."]
+      },
       unclear: {
-        name: "Mixed or Unclear Pattern",
-        desc: "Your answers describe more than one arrangement or leave some details uncertain. A week of sleep and wake times may make the pattern easier to see.",
-        track: ["Record a workday and a day off separately. Include naps and any long periods awake."],
-        watch: ["Look for differences in your answers about the number of sleeps, the length of the longest sleep and the full-day total."]
+        name: "No clear pattern yet",
+        desc: "Your answers leave a few details open. A few days of sleep and wake times may help you see a pattern.",
+        track: ["Try writing down when you fell asleep, when you got up and any naps you took."],
+        watch: ["See whether workdays and days off look different in your notes."]
       }
     };
 
-    let answers = [];
+    let answers = {};
     let current = 0;
+    let editingResult = false;
+
+    function activeQuestions() {
+      const hasMainSleep = ['A', 'B'].includes(answers.layout);
+      return questions.filter(question => {
+        if (question.id === 'naps') return hasMainSleep;
+        if (question.id === 'napType') return hasMainSleep && answers.naps === 'C';
+        if (question.id === 'schedule') {
+          return answers.layout === 'C' ||
+            (answers.layout === 'A' && answers.naps === 'C' && answers.napType === 'E');
+        }
+        return true;
+      });
+    }
+
+    function optionsFor(question) {
+      if (question.id !== 'schedule') return question.opts;
+      const choices = answers.layout === 'C' ? ['A', 'B', 'E', 'F'] : ['A', 'C', 'F'];
+      return question.opts.filter(option => choices.includes(option.l));
+    }
+
+    function answerText(id) {
+      const question = questions.find(item => item.id === id);
+      return question.opts.find(option => option.l === answers[id])?.t || '';
+    }
 
     function renderQuestion(moveFocus = false) {
       const section = document.getElementById('quiz-section');
-      if (current === questions.length) {
+      const route = activeQuestions();
+      if (current >= route.length) {
+        editingResult = false;
         showResults();
         const heading = document.querySelector('#results-section h2');
         heading.tabIndex = -1;
         heading.focus();
         return;
       }
-      const question = questions[current];
+      const question = route[current];
+      const help = question.id === 'naps' && answers.layout === 'B'
+        ? 'You’ve already counted both stretches of your main sleep. Think about any extra naps you took.'
+        : question.help;
       section.innerHTML = `
-        <div class="bg-white p-6 rounded-lg shadow">
-          <p id="question-progress" class="text-sm text-gray-500 mb-2">Question ${current + 1} of ${questions.length}</p>
-          <h3 tabindex="-1" aria-describedby="question-progress" class="text-xl font-semibold mb-4">${question.q}</h3>
+        <div data-question-id="${question.id}" class="bg-white p-6 rounded-lg shadow">
+          <p id="question-progress" class="text-sm text-gray-500 mb-2">Question ${current + 1}</p>
+          <h3 tabindex="-1" aria-describedby="question-progress${help ? ' question-help' : ''}" class="text-xl font-semibold mb-4">${question.q}</h3>
+          ${help ? `<p id="question-help" class="text-gray-600 mb-4">${help}</p>` : ''}
           <div class="space-y-3">
-            ${question.opts.map(option => `
-              <button type="button" class="quiz-option w-full text-left p-4 border rounded-lg hover:border-blue-400${answers[current] === option.l ? ' selected' : ''}" data-letter="${option.l}" aria-pressed="${answers[current] === option.l}">
-                <strong>${option.l}.</strong> ${option.t}
-              </button>
+            ${optionsFor(question).map(option => `
+              <button type="button" class="quiz-option w-full text-left p-4 border rounded-lg hover:border-blue-400${answers[question.id] === option.l ? ' selected' : ''}" data-letter="${option.l}" aria-pressed="${answers[question.id] === option.l}">${option.t}</button>
             `).join('')}
           </div>
-          ${current > 0 ? '<button type="button" id="previous-question" class="nav-link mt-4">Back one question</button>' : ''}
-        </div>
-      `;
+          ${current > 0 ? '<button type="button" id="previous-question" class="nav-link mt-4">Back</button>' : ''}
+        </div>`;
       if (moveFocus) section.querySelector('h3').focus();
     }
 
-    document.getElementById('quiz-section').addEventListener('click', (event) => {
+    document.getElementById('quiz-section').addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button) return;
       if (button.id === 'previous-question') {
         current--;
       } else if (button.dataset.letter) {
-        answers[current] = button.dataset.letter;
-        current++;
+        const question = activeQuestions()[current];
+        answers[question.id] = button.dataset.letter;
+        const route = activeQuestions();
+        for (const id of Object.keys(answers)) {
+          const item = route.find(question => question.id === id);
+          if (!item || !optionsFor(item).some(option => option.l === answers[id])) delete answers[id];
+        }
+        if (editingResult) {
+          const unanswered = activeQuestions().findIndex(question => !answers[question.id]);
+          current = unanswered === -1 ? activeQuestions().length : unanswered;
+        } else {
+          current++;
+        }
       } else return;
       renderQuestion(true);
     });
 
-    function scorePattern() {
-      const [count, , , layout, longest, , , naps, total, namedSchedule] = answers;
-      // A named schedule requires both an explicit match and a compatible sleep record.
-      if (namedSchedule === 'B') {
-        return count === 'C' && layout === 'C' && longest === 'C' && naps === 'F' && ['B', 'C', 'F'].includes(total)
-          ? 'triphasic' : 'unclear';
-      }
-      if (namedSchedule === 'C') {
-        return count === 'C' && layout === 'A' && (longest === 'B' || longest === 'C') && naps === 'E' && ['C', 'F'].includes(total)
-          ? 'everyman' : 'unclear';
-      }
-      if (namedSchedule === 'E') {
-        return count === 'C' && layout === 'C' && longest === 'D' && naps === 'F' && ['D', 'F'].includes(total)
-          ? 'uberman' : 'unclear';
+    function openQuiz() {
+      document.getElementById('report-status').textContent = '';
+      document.getElementById('report-section').classList.add('hidden');
+      document.getElementById('results-section').classList.add('hidden');
+      document.getElementById('quiz-section').classList.remove('hidden');
+      renderQuestion(true);
+    }
+
+    document.getElementById('pattern-summary').addEventListener('click', event => {
+      const button = event.target.closest('button[data-edit]');
+      if (!button) return;
+      current = activeQuestions().findIndex(question => question.id === button.dataset.edit);
+      if (current < 0) return;
+      editingResult = true;
+      openQuiz();
+    });
+
+    function assessPattern(answers) {
+      const { layout, naps, napType, longest, total, schedule } = answers;
+      const longestRanges = {
+        A: [6, Infinity, '6 hours or more'],
+        B: [3, 6, '3 to under 6 hours'],
+        C: [1, 3, '1 to under 3 hours'],
+        D: [0, 1, 'under an hour']
+      };
+      const totalRanges = {
+        A: [7, 9, '7 to under 9 hours'],
+        B: [5, 7, '5 to under 7 hours'],
+        C: [3, 5, '3 to under 5 hours'],
+        D: [0, 3, 'under 3 hours'],
+        E: [9, Infinity, '9 hours or more']
+      };
+      const stretch = longestRanges[longest];
+      const day = totalRanges[total];
+      const unclear = (reason, ...edit) => ({ key: 'unclear', reason, edit });
+
+      if (stretch && day && stretch[0] >= day[1]) {
+        return unclear(`You reported a longest stretch of ${stretch[2]} and a whole-day total of ${day[2]}. The daily total includes that stretch and any naps.`, 'longest', 'total');
       }
 
-      // Ranges use an inclusive lower bound and an exclusive upper bound.
-      const longestRanges = { A: [6, Infinity], B: [3, 6], C: [1, 3], D: [0, 1] };
-      const totalRanges = { A: [7, 9], B: [5, 7], C: [3, 5], D: [0, 3], E: [9, Infinity] };
-      if (longestRanges[longest] && totalRanges[total]) {
-        const [minPeriod, maxPeriod] = longestRanges[longest];
-        const [minTotal, maxTotal] = totalRanges[total];
-        let maxDay = Infinity;
-        if (count === 'A') maxDay = maxPeriod;
-        if (count === 'B') maxDay = 2 * maxPeriod;
-        if (count === 'B' && layout === 'A' && naps === 'B') maxDay = Math.min(maxDay, maxPeriod + 0.5);
-        if (minPeriod >= maxTotal || minTotal >= maxDay) return 'unclear';
+      const split = layout === 'B';
+      const mainSleep = layout === 'A' || split;
+      const regularNaps = mainSleep && naps === 'C';
+      const nap = regularNaps ? napType : undefined;
+      const oneNap = ['A', 'B', 'C', 'D'].includes(nap);
+      if (stretch && (nap === 'C' || nap === 'D') && stretch[1] <= 1) {
+        return unclear('You described a nap lasting at least an hour and a longest stretch of less than an hour. Count naps when choosing your longest stretch.', 'napType', 'longest');
       }
-      if (layout === 'D') return 'irregular';
-      if (namedSchedule === 'D') return 'unclear';
-      const singleNap = { B: 'biphasic_nap', C: 'biphasic_siesta', D: 'biphasic_other' };
+      if (mainSleep && stretch && day && (naps === 'A' || oneNap)) {
+        const mainCount = split ? 2 : 1;
+        const napLimits = { A: [0, 0.5], B: [0.5, 1], C: [1, Infinity], D: [1, Infinity] };
+        const [minNap, maxNap] = oneNap ? napLimits[nap] : [0, 0];
+        const dailyMax = mainCount * stretch[1] + Math.min(maxNap, stretch[1]);
+        const dailyMin = stretch[0] > maxNap ? stretch[0] + minNap : Math.max(stretch[0], minNap);
+        if (day[0] >= dailyMax || dailyMin >= day[1]) {
+          const shape = split ? 'two main stretches' : 'one main stretch';
+          const extras = oneNap ? ' and one nap' : ' and usually no naps';
+          return unclear(`You described ${shape}${extras}, with a longest stretch of ${stretch[2]}. Those times do not add up to your reported total of ${day[2]} on the same day.`, 'longest', 'total', oneNap ? 'napType' : 'naps');
+        }
+      }
+
+      const namedSchedules = {
+        B: { key: 'triphasic', layout: 'C', lengths: ['C'], totals: ['B', 'C'], description: 'three sleeps of about 90 minutes to two hours each', sum: 'roughly 4.5 to 6 hours' },
+        C: { key: 'everyman', layout: 'A', lengths: ['B', 'C'], totals: ['C'], description: 'one sleep of about three hours plus three short naps', sum: 'roughly four hours' },
+        E: { key: 'uberman', layout: 'C', lengths: ['D'], totals: ['D'], description: 'four or six short sleeps spaced through the day', sum: 'roughly two hours' }
+      };
+      const hasScheduleQuestion = layout === 'C' || (layout === 'A' && regularNaps && nap === 'E');
+      const match = hasScheduleQuestion && namedSchedules[schedule];
+      if (match) {
+        if (match.layout !== layout) {
+          const firstChoice = layout === 'C' ? 'several sleeps with no main stretch' : 'one main stretch and naps';
+          return unclear(`Earlier you chose ${firstChoice}. The specific schedule you picked describes ${match.description}. Which better fits most days?`, 'layout', 'schedule');
+        }
+        if (stretch && !match.lengths.includes(longest)) {
+          return unclear(`The specific schedule you picked describes ${match.description}. Your estimate of ${stretch[2]} for the longest stretch falls outside that pattern.`, 'longest', 'schedule');
+        }
+        if (day && !match.totals.includes(total)) {
+          return unclear(`The specific schedule you picked adds up to ${match.sum} in 24 hours. You estimated ${day[2]} in total.`, 'total', 'schedule');
+        }
+        return { key: match.key };
+      }
+
+      if (layout === 'D') return { key: 'irregular' };
+      if (layout === 'C') return { key: 'polyphasic_other' };
+      if (split) return { key: regularNaps ? 'segmented_naps' : 'segmented' };
       if (layout === 'A') {
-        if (count === 'A' && naps === 'A') return 'monophasic';
-        if (count === 'B' && singleNap[naps]) return singleNap[naps];
-        if (count === 'C' && naps === 'E') return 'polyphasic_other';
+        if (naps === 'A') return { key: 'monophasic' };
+        if (naps === 'B') return { key: 'occasional_naps' };
+        const napResults = { A: 'biphasic_nap', B: 'biphasic_other', C: 'biphasic_siesta', D: 'biphasic_other', E: 'polyphasic_other' };
+        return { key: napResults[nap] || 'main_sleep' };
       }
-      if (layout === 'B') {
-        if (count === 'B' && naps === 'A') return 'segmented';
-        if (count === 'C' && (singleNap[naps] || naps === 'E')) return 'segmented_naps';
-      }
-      if (layout === 'C' && count === 'C' && naps === 'F') return 'polyphasic_other';
-      return 'unclear';
+      return unclear('Your answers leave open whether you usually had one main sleep, two stretches, or several shorter sleeps. You can revisit that question if one description feels close.', 'layout');
     }
 
     function showResults() {
       document.getElementById('quiz-section').classList.add('hidden');
-      const key = scorePattern();
+      const { key, reason, edit = [] } = assessPattern(answers);
       const p = patterns[key];
-      const duration = questions[8].opts.find(option => option.l === answers[8]).t;
+      const editLabels = {
+        layout: 'Review my usual sleep', longest: 'Review my longest stretch',
+        total: 'Review my total hours', naps: 'Review how often I napped',
+        napType: 'Review my naps', schedule: 'Review my schedule'
+      };
+      const occasionalNote = key === 'segmented' && answers.naps === 'B' ? ' You also took a nap on some days.' : '';
       const sum = document.getElementById('pattern-summary');
       sum.innerHTML = `
         <h3 class="text-2xl font-bold">${p.name}</h3>
-        <p class="mt-2 text-lg">${p.desc}</p>
-        <p class="mt-4"><strong>Your reported sleep in 24 hours</strong><br>${duration}</p>
-        <p class="mt-2"><strong>Your afternoon alertness</strong><br>${questions[2].opts.find(option => option.l === answers[2]).t}</p>
+        <p class="mt-2 text-lg">${reason || p.desc}${occasionalNote}</p>
+        ${edit.length ? `<div class="review-actions">${edit.map(id => `<button class="nav-link review-answer" data-edit="${id}" type="button">${editLabels[id]}</button>`).join('')}</div>` : ''}
+        <p class="mt-4"><strong>Your sleep in 24 hours</strong><br>${answerText('total')}</p>
+        <p class="mt-2"><strong>How you felt in the afternoon</strong><br>${answerText('alertness')}</p>
       `;
+
       const det = document.getElementById('detailed-info');
       det.innerHTML = `
         <h3 class="text-xl font-semibold">What to track</h3>
@@ -406,10 +563,9 @@
       pages.push([]);
       y = 742;
       paragraph('Your quiz answers', 18, true, 0, 9);
-      questions.forEach((question, i) => {
-        const selected = question.opts.find(option => option.l === answers[i]);
+      activeQuestions().forEach((question, i) => {
         paragraph((i + 1) + '. ' + question.q, 11, true, 0, 1);
-        paragraph(selected ? selected.t : 'Unanswered', 11, false, 12, 6);
+        paragraph(answerText(question.id), 11, false, 12, 6);
       });
 
       const objects = [];
@@ -456,13 +612,10 @@
     document.getElementById('print-results').addEventListener('click', () => window.print());
 
     document.getElementById('restart-quiz').addEventListener('click', () => {
-      answers = [];
+      answers = {};
       current = 0;
-      document.getElementById('report-status').textContent = '';
-      document.getElementById('report-section').classList.add('hidden');
-      document.getElementById('results-section').classList.add('hidden');
-      document.getElementById('quiz-section').classList.remove('hidden');
-      renderQuestion(true);
+      editingResult = false;
+      openQuiz();
     });
 
     renderQuestion();
