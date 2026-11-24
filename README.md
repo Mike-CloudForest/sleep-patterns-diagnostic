@@ -4,7 +4,9 @@ An adult educational assessment built from *Sleep Patterns — A Field Guide*. I
 
 ## Release status
 
-**`2026-11-24-guide-5` is a staged, unpublished release.** The existing public deployment is `2026-11-24-guide-4`. The saved-profile database migration was interrupted; a subsequent read-only check confirmed that its three new tables were absent. The new browser files and Edge Function must not be published until that migration is completed. See the deployment order below. This status is a release checkpoint, not evidence that the new features have been verified in production.
+**Source release: `2026-11-24-guide-5`.** The saved-profile database migration and matching `sleep-reports` Edge Function were deployed on November 24, 2026. Row-level security is enabled on the three profile tables. Access checks verified service-role permissions and direct public-access denial for those tables and the four new RPCs. Edge Function version 5 reports the matching guide-5 report version and preserves the existing custom session authentication.
+
+The release passed 140 automated tests, 14 groups of rollback-only checks against the production database, and live HTTP checks for version, authentication and CORS behavior. The browser preview and generated PDF were also verified. Public-browser acceptance remains a separate deployment check after Pages publishes the matching browser files; the checks recorded here do not claim that step has completed.
 
 - [Existing public assessment](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/)
 - [Existing contact administration](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/admin.html)
@@ -110,7 +112,16 @@ node --test tests/*.test.mjs
 
 The tests cover contrasting sleep answers and all 14 result categories, traditional-profile combinations, Chinese New Year fixtures, Western boundary dates, chart calculations, rhythm comparisons and profile-service behavior. The chart fixtures compare all 130 published gate/line cells across five reference charts and exercise offset gaps/folds, an unusual half-hour fold, a skipped civil date, the 88-degree solve and invalid/unknown inputs. The reference repository supplies numerical vectors; it does not include the original third-party calculator screenshots. This is a numerical cross-check, not clinical or psychological validation.
 
-`tests/profile-service.test.mjs` intercepts database and email calls. It checks ownership, visitor/administrator token separation, consent, one-use links, expiry, retries, scoped deletion/logout, report-only non-retention and server chart recalculation. These tests send no real email. Database grants, SQL concurrency, production delivery and the final browser flows require their own observed verification. Do not report a staged feature as live solely because the unit tests pass.
+`tests/profile-service.test.mjs` intercepts database and email calls. It checks ownership, visitor/administrator token separation, consent, one-use links, expiry, retries, scoped deletion/logout, report-only non-retention and server chart recalculation. These tests send no real email.
+
+Verification recorded on November 24, 2026:
+
+- **140 automated tests passed**, with no failures. JavaScript syntax, backend TypeScript transformation, local dependency paths and whitespace checks passed.
+- **14 groups of rollback-only production database checks passed**, covering saved assessments, token redemption, retries, ownership, history, deletion and prevention of recreation through an old request. No test fixtures remained after rollback. Table/RPC grants and row-level security were checked separately.
+- Live HTTP checks confirmed the guide-5 service version, `401` responses for private list/save operations without a session, an allowed-origin `204` preflight and a `403` response for a foreign origin.
+- The browser preview produced Monophasic and Segmented sleep from contrasting answers, calculated the expected reference birth profile, preserved usable results with an unknown birth time, and generated a visually inspected 12-page PDF.
+
+These checks do not establish actual email delivery or completion of the final public-browser flow. Verify those separately when performing the corresponding release acceptance steps.
 
 The committed chart bundle is built from pinned MIT dependencies: `hd-chart-engine` 0.1.1, `astronomy-engine` 2.1.19 and `luxon` 3.7.2. `esbuild` 0.28.2 is a build dependency. To rebuild:
 
@@ -126,9 +137,9 @@ The optional GPL Moshier backend and Swiss Ephemeris are not included in the shi
 
 GitHub Actions publishes a push to `main` through the `gh-pages` branch. The report service has a separate Supabase deployment. Keep the browser, report generator and service on matching versions.
 
-1. Complete and verify `backend/profile-schema.sql` in the existing Cloud Forest Reach project. The original `backend/schema.sql` is already deployed; do not replace it or recreate existing contact data. The new migration adds saved assessments, profile consent events and visitor tokens, with RLS and service-only access. The interrupted attempt did not create these tables.
+1. Apply and verify required database migrations in the existing Cloud Forest Reach project before publishing dependent routes. Both the original `backend/schema.sql` and the guide-5 `backend/profile-schema.sql` are deployed. The profile migration adds saved assessments, profile consent events and visitor tokens, with RLS and service-only access. Do not replace existing contact data or reapply completed schemas as a substitute for a new migration.
 2. Deploy `backend/index.ts` as `sleep-reports`, including **all** relative dependencies: `assessment.js`, `guide-model.js`, `traditions.js`, `report.js`, `rhythm-insights.js`, `chart-view.js`, `profile-data.js`, `birth-profile.js`, `birth-chart.js` and `vendor/chart-engine.js`. Preserve the existing custom authentication arrangement and `verify_jwt: false`. Keep server-only secrets in Vault.
-3. Verify the service version, restricted table/RPC access and the intended profile operations. A staged browser release must not call saved-profile routes before their database exists.
+3. Verify the service version, restricted table/RPC access and the intended profile operations. For this release, the database and Edge Function checks described above passed on November 24, 2026. Future releases must repeat the checks relevant to their changes.
 4. Publish the matching browser source to `main` only after the service is ready. Check the Pages workflow, complete the public quiz and profile flows, inspect a generated PDF, and separately verify any authorized email delivery.
 
 `REPORT_VERSION` is exported by `assessment.js`. Update it and the release query values/import maps in all affected HTML entrypoints together. Older clients receive an update-required response from the service, so deploy the matched versions in a coordinated release. Changes to question meanings must also preserve or explicitly review older saved answers. [backend/README.md](backend/README.md) documents the API, request limits, database schema, consent and idempotent retry behavior.
