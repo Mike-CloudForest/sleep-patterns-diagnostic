@@ -3,6 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://traincloudforest.com/sleep">
+  <script>
+    // Existing profile.html edit links stay with their original private records.
+    // Ordinary visits use a fixed URL; never forward a query string or fragment.
+    const legacySavedId = new URLSearchParams(location.hash.slice(1)).get('saved');
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(legacySavedId || '')) {
+      document.documentElement.setAttribute('data-legacy-assessment', '');
+    } else {
+      location.replace('https://traincloudforest.com/sleep');
+    }
+  </script>
+  <style>
+    html:not([data-legacy-assessment]) body > :not(#canonical-handoff) { display: none !important; }
+    #canonical-handoff { width: min(100% - 2rem, 48rem); margin: 2rem auto; }
+  </style>
   <meta name="description" content="Understand your sleep pattern and compare it with your Western horoscope, Chinese zodiac and Human Design. Build a personal Cloud Forest report from your answers.">
   <meta name="theme-color" content="#edf4fa">
   <title>Sleep Patterns | Cloud Forest Field Guide</title>
@@ -29,9 +45,18 @@
       }
     }
   </script>
-  <script type="module" src="./app.js?v=2026-11-24-guide-5"></script>
+  <script type="module">
+    if (document.documentElement.hasAttribute('data-legacy-assessment')) {
+      await import('./app.js?v=2026-11-24-guide-5');
+    }
+  </script>
 </head>
 <body>
+  <section id="canonical-handoff" class="card" aria-labelledby="handoff-heading">
+    <h1 id="handoff-heading">Sleep Patterns has a new home</h1>
+    <p><a href="https://traincloudforest.com/sleep" rel="noreferrer">Continue to Sleep Patterns at traincloudforest.com</a></p>
+    <p>Earlier saved assessments remain available in <a href="./profile.html">your original private history</a>. Existing confirmation and unsubscribe links still work here.</p>
+  </section>
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header">
     <div class="header-inner">

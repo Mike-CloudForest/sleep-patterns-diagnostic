@@ -1,14 +1,26 @@
 # Cloud Forest Sleep Patterns Field Guide
 
+## Canonical school application and legacy records
+
+**New assessment destination:** [traincloudforest.com/sleep](https://traincloudforest.com/sleep). Publish this repository's root-page handoff only after the school application has been verified live.
+
+The school application manages new member/verified-guest profiles, assessment history, newsletter choices and optional results-based personalization in its own registry. This repository and its existing backend retain the earlier records; the handoff does not transfer them or reuse their newsletter permissions.
+
+Ordinary visits to `index.html` redirect to the fixed school URL, with a usable link fallback and no forwarded query string or fragment. Existing `#saved=<UUID>` edit links stay in the legacy assessment so an older saved entry can still be reviewed or updated with its original service.
+
+Keep `profile.html`, `unsubscribe.html`, `privacy.html`, `admin.html` and their scripts available. Legacy report-confirmation and sign-in links are handled by `profile.html#token=…`; this release has no separate `confirm.html` route. Their tokens remain on the original site. [Open earlier private history](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/profile.html).
+
+The documentation below describes the legacy guide-5 application and backend.
+
 An adult educational assessment built from *Sleep Patterns — A Field Guide*. It identifies a reported sleep arrangement, explains which answers produced the result, and connects that result with self-described preferences and optional traditional birth profiles. Visitors can download or email a PDF and, with separate consent, save a private assessment history. It does not provide a clinical diagnosis or establish that a birth chart determines a person's sleep needs.
 
-## Release status
+## Legacy release status
 
 **Source release: `2026-11-24-guide-5`.** The saved-profile database migration and matching `sleep-reports` Edge Function were deployed on November 24, 2026. Row-level security is enabled on the three profile tables. Access checks verified service-role permissions and direct public-access denial for those tables and the four new RPCs. Edge Function version 5 reports the matching guide-5 report version and preserves the existing custom session authentication.
 
 The release passed 140 automated tests, 14 groups of rollback-only checks against the production database, and live HTTP checks for version, authentication and CORS behavior. The browser preview and generated PDF were also verified. Public-browser acceptance remains a separate deployment check after Pages publishes the matching browser files; the checks recorded here do not claim that step has completed.
 
-- [Existing public assessment](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/)
+- [Legacy entry URL](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/)
 - [Existing contact administration](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/admin.html)
 - [Public privacy information](https://mike-cloudforest.github.io/sleep-patterns-diagnostic/privacy.html)
 - [Source Field Guide PDF](assets/Sleep-Patterns-Guide.pdf)
