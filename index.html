@@ -6,9 +6,20 @@
   <meta name="description" content="Explore your sleep routine with the Cloud Forest Sleep Patterns Field Guide. Complete an assessment, compare sleep patterns and create a personal PDF report.">
   <meta name="theme-color" content="#edf4fa">
   <title>Sleep Patterns | Cloud Forest Field Guide</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=2026-11-24-guide-2">
   <script src="./vendor/pdf-lib.min.js" defer></script>
-  <script type="module" src="./app.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "./assessment.js": "./assessment.js?v=2026-11-24-guide-2",
+        "./guide-model.js": "./guide-model.js?v=2026-11-24-guide-2",
+        "./traditions.js": "./traditions.js?v=2026-11-24-guide-2",
+        "./report.js": "./report.js?v=2026-11-24-guide-2",
+        "./config.js": "./config.js?v=2026-11-24-guide-2"
+      }
+    }
+  </script>
+  <script type="module" src="./app.js?v=2026-11-24-guide-2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>

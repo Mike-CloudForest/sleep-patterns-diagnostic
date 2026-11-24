@@ -44,6 +44,8 @@ The app maintains a contact and consent list for this assessment. CSV files incl
 
 GitHub Actions publishes the `main` source through `gh-pages`. The report service has a separate Supabase deployment. Publish matching browser and backend copies of the shared modules whenever the assessment or report changes. Backend setup and retry behavior are documented in [backend/README.md](backend/README.md).
 
+The assessment page uses versioned script URLs and an import map so returning browsers load the matching question, interpretation and PDF modules together. For a new release, update `REPORT_VERSION` and every `v=` release value in `index.html`, then deploy the shared backend modules. Changes to question meanings must also preserve or explicitly review older saved answers.
+
 ## Data handling
 
 Completed assessment results, tradition selections and diary entries use the current tab's session storage for refresh recovery. Browser restoration can restore that session. Downloads and printed copies are controlled by the user's device.
