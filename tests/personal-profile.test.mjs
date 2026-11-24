@@ -50,6 +50,18 @@ test('missing profiles stay unknown while self-described preferences remain usef
   assert.ok(result.experiments.some(item=>/workday/.test(item.text)));
 });
 
+test('physical discomfort is interpreted as discomfort without an activity or birth-profile inference', () => {
+  const result=buildPersonalProfile({...base,restChallenge:'physical'},{western:'aries',chinese:'tiger',humanDesign:'generator'},mono);
+  const preference=result.preferences.find(item=>/discomfort/.test(item.title));
+  assert.ok(preference);
+  assert.match(preference.paragraphs.join(' '),/physical discomfort or tension/);
+  const experiment=result.experiments.find(item=>item.title==='Observe what most affects your rest');
+  assert.match(experiment.text,/discomfort or tension/);
+  assert.doesNotMatch(preference.paragraphs.join(' ')+experiment.text,/activation|activity|demanding|exertion|exercise/i);
+  assert.ok(result.cards.every(card=>!card.paragraphs.some(text=>text.startsWith('You also reported '))));
+  assert.doesNotMatch(JSON.stringify(result),/You (?:identified|also reported) physical activation/);
+});
+
 test('sleepiness and short duration take precedence over traditional profile experiments', () => {
   const result=buildPersonalProfile({...base,total:300,alertness:'C',restChallenge:'mental'},selected,mono);
   assert.equal(result.experiments[0].title,'Give unwanted sleepiness priority');

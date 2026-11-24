@@ -1,5 +1,5 @@
 import { traditionsData } from './traditions.js';
-export const REPORT_VERSION = '2026-11-24-guide-3';
+export const REPORT_VERSION = '2026-11-24-guide-4';
 export const CONSENT_VERSION = '2026-11-23';
 export const REPORT_CONSENT = 'I ask Cloud Forest to email my PDF report. I agree that my answers and diary will be processed to create it, and that Cloud Forest will keep my name, email address, consent and delivery record.';
 export const NEWSLETTER_CONSENT = 'I agree to receive Cloud Forest newsletters about rest, training and learning. I can unsubscribe at any time. By typing my full name, I sign this consent.';
