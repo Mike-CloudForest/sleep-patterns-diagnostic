@@ -36,7 +36,7 @@ function restore() {
       answers = safe.answers;
       traditionsSelection = safe.traditionsSelection;
       diary = safe.diary;
-      byId('start-assessment').textContent = 'Continue my assessment';
+      byId('start-assessment').textContent = 'View my saved results';
     }
   } catch { /* An incomplete or old session starts with a clean assessment. */ }
 }
@@ -93,7 +93,12 @@ function recordAnswer(value) {
 }
 byId('start-assessment').addEventListener('click',()=>{
   byId('intro').hidden=true;byId('assessment').hidden=false;byId('results').hidden=true;
+  if(route().every(q=>answers[q.id]!==undefined)){showResults(true);return;}
   current=0;showQuestion();
+});
+document.querySelector('.brand').addEventListener('click',()=>{
+  byId('intro').hidden=false;byId('assessment').hidden=true;byId('results').hidden=true;
+  byId('start-assessment').textContent=route().every(q=>answers[q.id]!==undefined)?'View my saved results':'Start my assessment';
 });
 byId('question-host').addEventListener('click',event=>{
   const button=event.target.closest('button');
@@ -221,7 +226,7 @@ function renderDiary() {
 function displayDiary() {
   if(!diary.length){byId('diary-entries').innerHTML='<p class="muted">Your recorded days will appear here. A blank two-week record is included in the PDF if you leave this empty.</p>';return;}
   const average=Math.round(diary.reduce((sum,r)=>sum+r.mainMinutes+r.napMinutes,0)/diary.length);
-  byId('diary-entries').innerHTML='<p><strong>'+diary.length+' recorded days</strong> · average '+escape(formatSleepMinutes(average))+'</p><div class="table-scroll"><table><thead><tr><th>Date</th><th>Main sleep</th><th>Naps</th><th>Total</th><th>Action</th></tr></thead><tbody>'+[...diary].sort((a,b)=>a.date.localeCompare(b.date)).map(row=>'<tr><td>'+row.date+'</td><td>'+escape(row.mainMinutes?formatSleepMinutes(row.mainMinutes):'0 minutes')+'</td><td>'+escape(row.napMinutes?formatSleepMinutes(row.napMinutes):'0 minutes')+'</td><td>'+escape(formatSleepMinutes(row.mainMinutes+row.napMinutes))+'</td><td><button class="text-button" type="button" data-remove-day="'+row.date+'">Remove</button></td></tr>').join('')+'</tbody></table></div>';
+  byId('diary-entries').innerHTML='<p><strong>'+diary.length+' recorded '+(diary.length===1?'day':'days')+'</strong> · average '+escape(formatSleepMinutes(average))+'</p><div class="table-scroll"><table><thead><tr><th>Date</th><th>Main sleep</th><th>Naps</th><th>Total</th><th>Action</th></tr></thead><tbody>'+[...diary].sort((a,b)=>a.date.localeCompare(b.date)).map(row=>'<tr><td>'+row.date+'</td><td>'+escape(row.mainMinutes?formatSleepMinutes(row.mainMinutes):'0 minutes')+'</td><td>'+escape(row.napMinutes?formatSleepMinutes(row.napMinutes):'0 minutes')+'</td><td>'+escape(formatSleepMinutes(row.mainMinutes+row.napMinutes))+'</td><td><button class="text-button" type="button" data-remove-day="'+row.date+'">Remove</button></td></tr>').join('')+'</tbody></table></div>';
 }
 byId('diary-panel').addEventListener('submit',event=>{
   event.preventDefault();
