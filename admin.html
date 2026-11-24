@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Report administration | Cloud Forest</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./admin.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header"><div class="header-inner">
+    <a class="brand" href="./index.html"><span class="brand-name">Cloud Forest</span><span class="brand-section">Sleep Patterns Field Guide</span></a>
+    <nav aria-label="Main navigation"><a href="./index.html">Return to assessment</a><a href="./privacy.html">Privacy</a></nav>
+  </div></header>
+  <main id="main-content">
+    <div class="section-heading" style="margin-top:2.5rem">
+      <div><p class="eyebrow">Cloud Forest</p><h1 style="font-size:2.25rem">Report administration</h1></div>
+      <button id="admin-logout" class="button button-secondary" type="button" hidden>Sign out</button>
+    </div>
+    <p id="admin-status" role="status" aria-live="polite" class="status-message"></p>
+
+    <section id="admin-signin" class="card" style="max-width:35rem;margin-top:1.5rem" aria-labelledby="signin-heading">
+      <h2 id="signin-heading">Sign in by email</h2>
+      <p>Use an email address with administrator access to receive a one-time sign-in link.</p>
+      <form id="admin-login-form" class="field-grid" style="grid-template-columns:1fr;margin-top:1.2rem">
+        <label class="field" for="admin-email"><span>Email address</span><input id="admin-email" type="email" name="email" autocomplete="email" maxlength="254" required></label>
+        <button id="request-admin-link" type="submit" class="button button-primary">Send sign-in link</button>
+        <p id="login-status" role="status" aria-live="polite" class="status-message"></p>
+      </form>
+    </section>
+
+    <section id="admin-dashboard" style="margin-top:1.5rem" aria-label="Contacts and newsletter consent" hidden>
+      <div id="admin-summary" class="summary-grid" aria-label="Overall contact and delivery totals"></div>
+      <section class="card" style="margin-top:1.5rem" aria-labelledby="contacts-heading">
+        <div class="section-heading"><h2 id="contacts-heading">Contacts</h2><button id="refresh-contacts" type="button" class="button button-secondary">Refresh</button></div>
+        <div class="form-grid">
+          <label class="field" for="contact-filter"><span>Newsletter status</span><select id="contact-filter">
+            <option value="all">All contacts</option><option value="active">Active subscribers</option><option value="unsubscribed">Unsubscribed</option><option value="not_subscribed">Report only</option>
+          </select></label>
+          <label class="field" for="contact-page-size"><span>Contacts per page</span><select id="contact-page-size">
+            <option value="25">25</option><option value="50" selected>50</option><option value="100">100</option>
+          </select></label>
+        </div>
+        <p id="contact-range" class="small muted"></p>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Contact records, scroll horizontally for all fields">
+          <table>
+            <caption>Contact details and consent records</caption>
+            <thead><tr><th scope="col">Email</th><th scope="col">Name</th><th scope="col">Newsletter</th><th scope="col">Signed consent</th><th scope="col">Unsubscribed</th><th scope="col">Reports accepted</th><th scope="col">Latest report</th><th scope="col">Contact added</th></tr></thead>
+            <tbody id="contact-rows"></tbody>
+          </table>
+        </div>
+        <div class="actions" aria-label="Contact pages">
+          <button id="contacts-previous" class="button button-secondary" type="button" disabled>Previous page</button>
+          <button id="contacts-next" class="button button-secondary" type="button" disabled>Next page</button>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="export-heading">
+        <h2 id="export-heading">Export contacts</h2>
+        <p>Choose the newsletter status to include in the CSV file. The export starts with active subscribers selected.</p>
+        <form id="admin-export-form" class="form-grid" style="align-items:end;margin-top:1.2rem">
+          <label class="field" for="export-filter"><span>Include in export</span><select id="export-filter">
+            <option value="active" selected>Active subscribers</option><option value="all">All contacts</option><option value="unsubscribed">Unsubscribed</option><option value="not_subscribed">Report only</option>
+          </select></label>
+          <button id="export-contacts" type="submit" class="button button-primary">Download CSV</button>
+        </form>
+        <p id="export-status" role="status" aria-live="polite" class="status-message"></p>
+      </section>
+    </section>
+    <noscript><p class="card">Enable JavaScript to sign in and view administrator records.</p></noscript>
+  </main>
+  <footer class="site-footer"><p>Cloud Forest · Sleep Patterns Field Guide</p><nav aria-label="Footer"><a href="./index.html">Assessment</a><a href="./privacy.html">Privacy</a></nav></footer>
+</body>
+</html>
