@@ -15,7 +15,7 @@ Answer the core questions about your main sleep, naps, total sleep and afternoon
 
 The learning sections expand on sleep stages, sleep pressure, circadian timing, chronotype, schedule changes and the guide's examples. Optional observations add context. The optional Western zodiac, Chinese zodiac and Human Design sections present the guide's traditional reflections. A diary can include up to 14 distinct dates.
 
-Download PDF and Print report create a copy in the browser. The email form sends the assessment to the report service, which creates the PDF attachment itself. Emailing a report requires agreement to the displayed report-processing consent.
+Download PDF saves a copy from the browser. Print report opens the generated PDF in a new tab, where the visitor can use the PDF viewer’s Print command. If the browser blocks the new tab, the report downloads with instructions. The email form sends the assessment to the report service, which creates the PDF attachment itself. Emailing a report requires agreement to the displayed report-processing consent.
 
 Newsletter subscription starts unchecked. Selecting it requires typing a full name to sign the displayed consent. The service records the signature, exact consent text, version and server timestamp. Leaving the choice unchecked on a later report request preserves the existing preference. The preferences link in each report email opens an unsubscribe confirmation page.
 
@@ -46,7 +46,7 @@ GitHub Actions publishes the `main` source through `gh-pages`. The report servic
 
 ## Data handling
 
-Answers, tradition selections and diary entries use the current tab's session storage for refresh recovery. Browser restoration can restore that session. Downloads and printed copies are controlled by the user's device.
+Completed assessment results, tradition selections and diary entries use the current tab's session storage for refresh recovery. Browser restoration can restore that session. Downloads and printed copies are controlled by the user's device.
 
 The application database retains contact details, consent events, newsletter status, delivery records and a protected submission fingerprint. Assessment answers, diary contents and generated PDFs remain in processing memory during email generation. Resend receives the outgoing message and attachment, and provider and mailbox retention follow their respective policies.
 

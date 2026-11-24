@@ -16,8 +16,8 @@ export async function createSleepPdf(answers, selection = {}, diary = [], name =
   doc.setAuthor('Cloud Forest');
   doc.setCreator('Cloud Forest Sleep Patterns');
   doc.setProducer('Cloud Forest Sleep Patterns');
-  doc.setCreationDate(new Date('2026-11-23T00:00:00Z'));
-  doc.setModificationDate(new Date('2026-11-23T00:00:00Z'));
+  doc.setCreationDate(new Date('2026-11-24T00:00:00Z'));
+  doc.setModificationDate(new Date('2026-11-24T00:00:00Z'));
   const regular = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const blue = rgb(.09,.25,.36);

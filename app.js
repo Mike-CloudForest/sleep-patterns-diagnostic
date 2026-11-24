@@ -10,12 +10,14 @@ const paragraphs = values => values.map(text => '<p>'+escape(text)+'</p>').join(
 const bullets = values => '<ul>'+values.map(text=>'<li>'+escape(text)+'</li>').join('')+'</ul>';
 const ageQuestion = observationQuestions.find(q=>q.id==='ageBand');
 const detailQuestions = observationQuestions.filter(q=>q.id!=='ageBand');
+const PROGRESS_KEY = 'cloudforest-sleep-guide-1';
 let answers = {};
 let traditionsSelection = {};
 let diary = [];
 let current = 0;
 let editing = false;
 let pendingEmail = null;
+let pendingAlertnessReview = false;
 
 function restore() {
   try {
@@ -23,25 +25,46 @@ function restore() {
     if (pending && /^[a-f0-9]{64}$/.test(pending.fingerprint) && /^[a-f0-9-]{36}$/.test(pending.id)) pendingEmail = pending;
   } catch {}
   try {
-    const stored = JSON.parse(sessionStorage.getItem('cloudforest-sleep-guide-1') || 'null');
+    const stored = JSON.parse(sessionStorage.getItem(PROGRESS_KEY) || 'null');
     if (stored) {
+      const under18 = stored.answers?.ageBand === 'under18';
+      const reviewAfternoon = stored.pendingAlertnessReview === true ||
+        (stored.reportVersion !== REPORT_VERSION && stored.answers?.alertness === 'D');
+      const retainedAnswers = {...stored.answers};
+      if(under18)retainedAnswers.ageBand = 'unknown';
+      // A migration may already have removed the old answer before a diary
+      // save. The placeholder only validates the other retained fields.
+      if(reviewAfternoon)retainedAnswers.alertness = 'E';
       let safe;
-      try { safe = validateAssessment(stored); }
+      // Validate retained answers for editing, then restore the reported age.
+      // An under-18 selection must never become a completed adult assessment.
+      try { safe = validateAssessment({...stored,answers:retainedAnswers}); }
       catch {
         const extras = validateAssessment({...stored,answers:{layout:'E',total:'unknown',alertness:'E'}});
+        if(under18)answers = {ageBand:'under18'};
         traditionsSelection = extras.traditionsSelection;
         diary = extras.diary;
         return;
       }
       answers = safe.answers;
+      if(under18)answers.ageBand = 'under18';
       traditionsSelection = safe.traditionsSelection;
       diary = safe.diary;
-      byId('start-assessment').textContent = 'View my saved results';
+      // The old afternoon-sleep option also covered planned naps. Ask once
+      // before treating that older answer as the new main-sleep option.
+      pendingAlertnessReview = reviewAfternoon;
+      if(reviewAfternoon)delete answers.alertness;
+      byId('start-assessment').textContent = hasCompleteAssessment() ? 'View my saved results' : reviewAfternoon ? 'Review my saved answers' : 'Start my assessment';
     }
   } catch { /* An incomplete or old session starts with a clean assessment. */ }
 }
 function saveProgress() {
-  try { sessionStorage.setItem('cloudforest-sleep-guide-1', JSON.stringify({answers,traditionsSelection,diary})); } catch {}
+  try { sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({answers,traditionsSelection,diary,reportVersion:REPORT_VERSION,pendingAlertnessReview})); } catch {}
+}
+function hasCompleteAssessment() {
+  if(pendingAlertnessReview || answers.ageBand === 'under18' || !ageQuestion.opts.some(option=>option.l===answers.ageBand))return false;
+  try { validateAssessment({answers,traditionsSelection,diary}); return true; }
+  catch { return false; }
 }
 function route() { return [ageQuestion,...activeQuestions(answers)]; }
 function selectionOptions(question) { return optionsFor(question,answers); }
@@ -76,7 +99,12 @@ function showQuestion() {
 function recordAnswer(value) {
   const question=route()[current];
   answers[question.id]=value;
+  if(question.id==='alertness')pendingAlertnessReview=false;
   if (question.id==='ageBand' && value==='under18') {
+    // Remove the earlier completed adult session before saving this age change.
+    // Existing answers remain available if the visitor corrects the age range.
+    try { sessionStorage.removeItem(PROGRESS_KEY); } catch {}
+    saveProgress();
     byId('question-host').innerHTML='<div class="card"><h2>Use guidance matched to your age</h2><p>This assessment and email signup are designed for adults. Children and teenagers have different sleep needs. A parent, caregiver or healthcare professional can help you explore sleep concerns.</p><p><a href="https://www.cdc.gov/sleep/about/">CDC guidance for each age</a></p><button class="button button-secondary" id="change-age" type="button">Change age range</button></div>';
     focusHeading(byId('question-host'));
     return;
@@ -93,18 +121,21 @@ function recordAnswer(value) {
 }
 byId('start-assessment').addEventListener('click',()=>{
   byId('intro').hidden=true;byId('assessment').hidden=false;byId('results').hidden=true;
-  if(route().every(q=>answers[q.id]!==undefined)){showResults(true);return;}
-  current=0;showQuestion();
+  editing=false;
+  if(hasCompleteAssessment()){showResults(true);return;}
+  current=answers.ageBand==='under18'?0:Math.max(0,route().findIndex(q=>answers[q.id]===undefined));
+  editing=Object.keys(answers).length>0;
+  showQuestion();
 });
 document.querySelector('.brand').addEventListener('click',()=>{
   byId('intro').hidden=false;byId('assessment').hidden=true;byId('results').hidden=true;
-  byId('start-assessment').textContent=route().every(q=>answers[q.id]!==undefined)?'View my saved results':'Start my assessment';
+  byId('start-assessment').textContent=hasCompleteAssessment()?'View my saved results':'Start my assessment';
 });
 byId('question-host').addEventListener('click',event=>{
   const button=event.target.closest('button');
   if(!button)return;
   if(button.id==='previous-question'){current--;showQuestion();}
-  else if(button.id==='change-age'){current=0;showQuestion();}
+  else if(button.id==='change-age'||button.id==='review-invalid-answers'){editing=false;current=0;showQuestion();}
   else if(button.id==='unknown-duration')recordAnswer('unknown');
   else if(button.dataset.letter)recordAnswer(button.dataset.letter);
 });
@@ -143,7 +174,14 @@ function profileDetails(profile) {
     guidePages(profile.guideSource.pages);
 }
 function showResults(moveFocus=false) {
-  try { validateAssessment({answers,traditionsSelection,diary}); } catch(error) {byId('question-host').innerHTML='<div class="card"><h2>Review your answers</h2><p>'+escape(error.message)+'</p></div>';return;}
+  try { validateAssessment({answers,traditionsSelection,diary}); }
+  catch(error) {
+    byId('intro').hidden=true;byId('results').hidden=true;byId('assessment').hidden=false;
+    byId('question-host').innerHTML='<div class="card"><h2>Review your answers</h2><p>'+escape(error.message)+'</p><button class="button button-secondary" id="review-invalid-answers" type="button">Review answers</button></div>';
+    focusHeading(byId('question-host'));
+    return;
+  }
+  editing=false;
   byId('assessment').hidden=true;byId('results').hidden=false;
   const assessment=assessPattern(answers);
   const info=interpretAssessment(answers,assessment);
@@ -249,13 +287,49 @@ function pdfName(){return 'Cloud-Forest-Sleep-Report-'+assessPattern(answers).ke
 async function downloadReport(print=false) {
   const button=byId(print?'print-report':'download-report');
   button.disabled=true;
+  let preview=null;
+  let objectUrl=null;
+  function closePreparingTab() {
+    try { if(preview&&!preview.closed&&preview.location.href==='about:blank')preview.close(); } catch {}
+  }
   try {
+    if(print) {
+      // Open before awaiting PDF generation so the click can authorize the tab.
+      try {
+        preview=window.open('about:blank','_blank');
+        if(preview) {
+          preview.opener=null;
+          preview.document.title='Preparing printable report | Cloud Forest';
+          preview.document.body.textContent='Preparing printable report…';
+          preview.document.body.style.cssText='margin:3rem;font:18px/1.5 system-ui,sans-serif;color:#142a3c';
+        }
+      } catch { closePreparingTab();preview=null; }
+      byId('report-status').textContent='Preparing your printable PDF…';
+    }
     const pdf=await createSleepPdf(answers,traditionsSelection,diary,byId('report-name').value);
-    const url=URL.createObjectURL(new Blob([pdf],{type:'application/pdf'}));
-    const link=document.createElement('a');link.href=url;link.download=pdfName();document.body.append(link);link.click();link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
-    byId('report-status').textContent=print?'Open the downloaded PDF and choose Print in your PDF viewer.':'Your PDF is ready to save.';
-  }catch(error){byId('report-status').textContent=error.message;}
+    if(preview?.closed) {
+      byId('report-status').textContent='The printable report tab was closed. Use Print report to open it again, or choose Download PDF.';
+      return;
+    }
+    objectUrl=URL.createObjectURL(new Blob([pdf],{type:'application/pdf'}));
+    let opened=false;
+    if(preview) {
+      try { preview.location.replace(objectUrl);opened=true; }
+      catch { closePreparingTab(); }
+    }
+    if(opened) {
+      byId('report-status').textContent='Your printable PDF is open in a new tab. Choose Print in the PDF viewer when you are ready.';
+    } else {
+      const link=document.createElement('a');link.href=objectUrl;link.download=pdfName();document.body.append(link);link.click();link.remove();
+      byId('report-status').textContent=print?'The printable tab could not open. Your PDF was downloaded; open it and choose Print in your PDF viewer.':'Your PDF is ready to save.';
+    }
+    const urlToRelease=objectUrl;
+    setTimeout(()=>URL.revokeObjectURL(urlToRelease),opened?300000:60000);
+  }catch(error){
+    closePreparingTab();
+    if(objectUrl)URL.revokeObjectURL(objectUrl);
+    byId('report-status').textContent=error.message||'The PDF could not be prepared. Please try again.';
+  }
   finally{button.disabled=false;}
 }
 byId('download-report').addEventListener('click',()=>downloadReport());

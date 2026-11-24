@@ -378,7 +378,7 @@ export function interpretAssessment(answers, assessment = { key: 'unclear' }) {
     A: ['You stayed awake easily in the afternoon.', 'Your description suggests that staying awake felt comfortable at that time.'],
     B: ['Staying awake took effort.', 'Effort to stay awake is worth tracking alongside sleep duration and timing. If it persists, discuss it with a healthcare professional.'],
     C: ['You dozed off without intending to.', 'Unwanted dozing deserves attention, especially when you have allowed enough time for sleep or when it affects safety.'],
-    D: ['Afternoon sleep was part of your usual schedule.', 'Afternoon sleep may be the main sleep for someone working nights. Evaluate alertness during the hours you need to be awake.'],
+    D: ['Afternoons were part of your main sleep.', 'This can happen when someone works nights. Evaluate alertness during the hours you need to be awake.'],
     E: ['Your afternoon alertness varied.', 'Record both the sleepy days and the easier days, along with the previous sleep.']
   }[answers.alertness];
   if (alertness) {
