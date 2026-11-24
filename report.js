@@ -1,13 +1,15 @@
 import { assessPattern, activeQuestions, observationQuestions, breathingOptions } from './assessment.js';
 import { buildGuideReport, guidePatterns, guideLearningSections, guideSources, formatSleepMinutes } from './guide-model.js';
 import { buildPersonalProfile } from './traditions.js';
+import { buildRhythmInsights } from './rhythm-insights.js';
+import { describeBirthChart } from './chart-view.js';
 
 function printable(text) {
   return String(text).replace(/[–—−]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
     .replace(/½/g, '1/2').replace(/•/g, '-').replace(/…/g, '...')
     .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e\n]/g, '');
 }
-export async function createSleepPdf(answers, selection = {}, diary = [], name = '', PDFLib = globalThis.PDFLib) {
+export async function createSleepPdf(answers, selection = {}, diary = [], name = '', PDFLib = globalThis.PDFLib, chart = null) {
   if (!PDFLib) throw new Error('The PDF generator is still loading. Try again in a moment.');
   const { PDFDocument, StandardFonts, rgb } = PDFLib;
   const doc = await PDFDocument.create();
@@ -83,7 +85,26 @@ export async function createSleepPdf(answers, selection = {}, diary = [], name =
     write(item.text,item.kind);
     if (item.kind==='title' && name.trim()) write('Prepared for '+name.trim());
   }
-  const personal=buildPersonalProfile(answers,selection,{key:assessment.key,name:guidePatterns[assessment.key]?.name});
+  const rhythm=buildRhythmInsights(answers,selection,assessment,chart);
+  if(y<400)newPage();else y-=18;
+  write(rhythm.title,'title');write(rhythm.introduction);
+  for(const finding of rhythm.findings){write(finding.title,'heading');write(finding.text);}
+  for(const observation of rhythm.observations){write(observation.title,'heading');write(observation.text);}
+  const chartInfo=describeBirthChart(chart);
+  if(chartInfo){
+    if(y<400)newPage();else y-=18;
+    write(chartInfo.title,'title');write(chartInfo.note);
+    chartInfo.facts.forEach(([label,value])=>write(label+': '+value));
+    chartInfo.warnings.forEach(text=>write('Calculation note: '+text));
+    chartInfo.details.forEach(item=>{write(item.title,'heading');write(item.text);});
+    write('Defined centers: '+chartInfo.centers);
+    write('Defined channels: '+chartInfo.channels);
+    write('Chart activations: gate.line','heading');
+    chartInfo.activations.forEach(row=>write(row.body+' — Personality '+row.personality+'; Design '+row.design));
+    write('Personality uses the birth moment. Design uses the earlier moment when the Sun was 88 degrees before its birth position. These calculations do not include a DreamRave chart, ascendant, houses or a full Chinese Four Pillars chart.');
+    chartInfo.sources.forEach(source=>write(source.title+' — '+source.url));
+  }
+  const personal=buildPersonalProfile(answers,selection,{key:assessment.key,name:guidePatterns[assessment.key]?.name},chart);
   if(y<400)newPage();else y-=18;
   write(personal.title,'title');
   write(personal.introduction);

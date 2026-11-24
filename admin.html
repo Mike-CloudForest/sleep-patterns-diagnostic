@@ -6,8 +6,26 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
   <title>Report administration | Cloud Forest</title>
-  <link rel="stylesheet" href="./styles.css">
-  <script type="module" src="./admin.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=2026-11-24-guide-5">
+  <link rel="stylesheet" href="./profile-account.css?v=2026-11-24-guide-5">
+  <script type="importmap">
+    {"imports":{
+      "./config.js":"./config.js?v=2026-11-24-guide-5",
+      "./profile-client.js":"./profile-client.js?v=2026-11-24-guide-5",
+      "./profile.js":"./profile.js?v=2026-11-24-guide-5",
+      "./assessment.js":"./assessment.js?v=2026-11-24-guide-5",
+      "./guide-model.js":"./guide-model.js?v=2026-11-24-guide-5",
+      "./traditions.js":"./traditions.js?v=2026-11-24-guide-5",
+      "./birth-profile.js":"./birth-profile.js?v=2026-11-24-guide-5",
+      "./birth-chart.js":"./birth-chart.js?v=2026-11-24-guide-5",
+      "./profile-data.js":"./profile-data.js?v=2026-11-24-guide-5",
+      "./rhythm-insights.js":"./rhythm-insights.js?v=2026-11-24-guide-5",
+      "./chart-view.js":"./chart-view.js?v=2026-11-24-guide-5",
+      "./report.js":"./report.js?v=2026-11-24-guide-5",
+      "./vendor/chart-engine.js":"./vendor/chart-engine.js?v=2026-11-24-guide-5"
+    }}
+  </script>
+  <script type="module" src="./admin.js?v=2026-11-24-guide-5"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -48,7 +66,7 @@
         <div class="table-scroll" tabindex="0" role="region" aria-label="Contact records, scroll horizontally for all fields">
           <table>
             <caption>Contact details and consent records</caption>
-            <thead><tr><th scope="col">Email</th><th scope="col">Name</th><th scope="col">Newsletter</th><th scope="col">Signed consent</th><th scope="col">Unsubscribed</th><th scope="col">Reports accepted</th><th scope="col">Latest report</th><th scope="col">Contact added</th></tr></thead>
+            <thead><tr><th scope="col">Email</th><th scope="col">Name</th><th scope="col">Newsletter</th><th scope="col">Signed consent</th><th scope="col">Unsubscribed</th><th scope="col">Reports accepted</th><th scope="col">Latest report</th><th scope="col">Contact added</th><th scope="col">Saved profile</th></tr></thead>
             <tbody id="contact-rows"></tbody>
           </table>
         </div>
@@ -58,9 +76,17 @@
         </div>
       </section>
 
+      <section id="admin-saved-profile" class="card admin-saved-panel" aria-labelledby="admin-saved-heading" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Confirmed saved assessment</p><h2 id="admin-saved-heading" tabindex="-1">Saved profile</h2></div><button id="admin-close-profile" type="button" class="button button-secondary">Close profile</button></div>
+        <p id="admin-saved-meta" class="small muted"></p>
+        <p class="small">This visitor explicitly chose to save these details for Cloud Forest review. This view uses the saved answers with the current report wording.</p>
+        <p id="admin-profile-status" class="status-message" role="status" aria-live="polite"></p>
+        <div id="admin-saved-content" class="admin-saved-content"></div>
+      </section>
+
       <section class="card" aria-labelledby="export-heading">
         <h2 id="export-heading">Export contacts</h2>
-        <p>Choose the newsletter status to include in the CSV file. The export starts with active subscribers selected.</p>
+        <p>Choose the newsletter status to include in the CSV file. The export starts with active subscribers selected. Saved birth details and assessment answers are available in the profile view and are excluded from this contact export.</p>
         <form id="admin-export-form" class="form-grid" style="align-items:end;margin-top:1.2rem">
           <label class="field" for="export-filter"><span>Include in export</span><select id="export-filter">
             <option value="active" selected>Active subscribers</option><option value="all">All contacts</option><option value="unsubscribed">Unsubscribed</option><option value="not_subscribed">Report only</option>

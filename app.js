@@ -4,6 +4,10 @@ import { traditionsData, renderTraditions, buildPersonalProfile } from './tradit
 import { renderProfileIntake } from './profile-ui.js';
 import { createSleepPdf } from './report.js';
 import { API_URL } from './config.js';
+import { PROFILE_CONSENT, PROFILE_CONSENT_VERSION } from './profile-data.js';
+import { buildRhythmInsights } from './rhythm-insights.js';
+import { renderBirthChart } from './chart-view.js';
+import { getProfileSession, profileRequest } from './profile-client.js';
 
 const byId = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -20,7 +24,10 @@ let editing = false;
 let pendingEmail = null;
 let pendingAlertnessReview = false;
 let profileStepCompleted = false;
-let birthDateDraft = '';
+let birthDetailsDraft = null;
+let birthChart = null;
+let profileDraft = null;
+let pendingProfileSave = null;
 
 function restore() {
   try {
@@ -38,22 +45,24 @@ function restore() {
       // A migration may already have removed the old answer before a diary
       // save. The placeholder only validates the other retained fields.
       if(reviewAfternoon)retainedAnswers.alertness = 'E';
-      let safe;
-      // Validate retained answers for editing, then restore the reported age.
-      // An under-18 selection must never become a completed adult assessment.
-      try { safe = validateAssessment({...stored,answers:retainedAnswers}); }
-      catch {
-        const extras = validateAssessment({...stored,answers:{layout:'E',total:'unknown',alertness:'E'}});
-        if(under18)answers = {ageBand:'under18'};
-        traditionsSelection = extras.traditionsSelection;
-        diary = extras.diary;
-        return;
+      // Restore valid answers even when the visitor stopped before the final
+      // question. Defaults validate only the separate profile/diary fields.
+      const safe=validateAssessment({...stored,answers:{layout:'E',total:'unknown',alertness:'E'}});
+      answers={};
+      for(const question of [...questions,...observationQuestions]) {
+        const value=retainedAnswers[question.id];
+        if(question.type==='duration') {
+          if(value==='unknown'||(Number.isInteger(value)&&value>0&&value<=1440))answers[question.id]=value;
+        } else if(optionsFor(question,{...retainedAnswers,...answers}).some(option=>option.l===value)) answers[question.id]=value;
       }
-      answers = safe.answers;
+      const relevant=activeQuestions(answers);
+      for(const question of questions)if(!relevant.some(item=>item.id===question.id))delete answers[question.id];
+      if(Array.isArray(retainedAnswers.apneaSigns))answers.apneaSigns=retainedAnswers.apneaSigns.filter(value=>breathingOptions.some(option=>option.l===value));
       if(under18)answers.ageBand = 'under18';
       traditionsSelection = safe.traditionsSelection;
       diary = safe.diary;
-      profileStepCompleted = stored.profileStepCompleted === true;
+      birthChart=safe.chart||null;
+      profileStepCompleted = stored.profileStepCompleted === true && stored.reportVersion === REPORT_VERSION;
       // The old afternoon-sleep option also covered planned naps. Ask once
       // before treating that older answer as the new main-sleep option.
       pendingAlertnessReview = reviewAfternoon;
@@ -63,14 +72,16 @@ function restore() {
   } catch { /* An incomplete or old session starts with a clean assessment. */ }
 }
 function saveProgress() {
-  try { sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({answers,traditionsSelection,diary,reportVersion:REPORT_VERSION,pendingAlertnessReview,profileStepCompleted})); } catch {}
+  try { sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({answers,traditionsSelection,diary,chart:birthChart,reportVersion:REPORT_VERSION,pendingAlertnessReview,profileStepCompleted})); } catch {}
 }
 function startLabel() {
-  return hasCompleteAssessment() ? (profileStepCompleted?'View my saved results':'Complete my personal profile') : pendingAlertnessReview?'Review my saved answers':'Start my assessment';
+  if(hasCompleteAssessment())return profileStepCompleted?'View my results':'Complete my personal profile';
+  if(pendingAlertnessReview)return 'Review my saved answers';
+  return Object.keys(answers).length?'Continue my assessment':'Start my assessment';
 }
 function hasCompleteAssessment() {
   if(pendingAlertnessReview || answers.ageBand === 'under18' || !ageQuestion.opts.some(option=>option.l===answers.ageBand))return false;
-  try { validateAssessment({answers,traditionsSelection,diary}); return true; }
+  try { validateAssessment({answers,traditionsSelection,diary,chart:birthChart}); return true; }
   catch { return false; }
 }
 function route() { return [ageQuestion,...activeQuestions(answers)]; }
@@ -88,7 +99,7 @@ function showQuestion() {
   const amount=Number.isInteger(answers.total)?answers.total:null;
   byId('question-host').innerHTML=`
     <div class="question-card" data-question-id="${question.id}">
-      <p class="question-progress">Question ${current+1}</p>
+      <p class="question-progress">Part 1 · Your sleep · Question ${current+1}</p>
       <h2 id="current-question">${escape(question.q)}</h2>
       ${helper?'<p id="question-help">'+escape(helper)+'</p>':''}
       ${isTime?`<form id="duration-form" aria-labelledby="current-question">
@@ -120,6 +131,7 @@ function recordAnswer(value) {
   for(const q of questions) {
     if(!active.some(a=>a.id===q.id) || (q.opts && answers[q.id] && !selectionOptions(q).some(o=>o.l===answers[q.id]))) delete answers[q.id];
   }
+  saveProgress();
   if(editing) {
     const missing=route().findIndex(q=>answers[q.id]===undefined);
     current=missing<0?route().length:missing;
@@ -184,26 +196,27 @@ function showProfileStep() {
   byId('intro').hidden=true;byId('results').hidden=true;byId('assessment').hidden=false;
   saveProgress();
   renderProfileIntake(byId('question-host'), {
-    selection:traditionsSelection,answers,birthDate:birthDateDraft,
+    selection:traditionsSelection,answers,birthDetails:birthDetailsDraft,chart:birthChart,draft:profileDraft,
+    onDraftChange:value=>{profileDraft=value;},
     onContinue:profile=>{
       const updated={...answers};
       for(const [id,value] of Object.entries(profile.preferences)){if(value)updated[id]=value;else delete updated[id];}
       if(profile.ageBand)updated.ageBand=profile.ageBand;
-      const safe=validateAssessment({answers:updated,traditionsSelection:profile.selection,diary});
+      const safe=validateAssessment({answers:updated,traditionsSelection:profile.selection,diary,chart:profile.chart});
       answers=safe.answers;traditionsSelection=safe.traditionsSelection;
-      birthDateDraft=profile.birthDate;profileStepCompleted=true;
+      birthDetailsDraft=profile.birthDetails;birthChart=safe.chart||null;profileDraft=null;profileStepCompleted=true;
       showResults(true);
     },
-    onSkip:()=>{profileStepCompleted=true;showResults(true);},
+    onSkip:()=>{profileDraft=null;profileStepCompleted=true;showResults(true);},
     onBack:()=>{current=Math.max(0,route().length-1);editing=false;showQuestion();},
-    onAgeGate:()=>{birthDateDraft='';profileStepCompleted=false;current=0;recordAnswer('under18');}
+    onAgeGate:()=>{birthDetailsDraft=null;birthChart=null;profileDraft=null;traditionsSelection={};profileStepCompleted=false;current=0;recordAnswer('under18');}
   });
   focusHeading(byId('question-host'));
 }
 function personalProfile(profile,assessment) {
-  const personal=buildPersonalProfile(answers,traditionsSelection,{key:assessment.key,name:profile.name});
+  const personal=buildPersonalProfile(answers,traditionsSelection,{key:assessment.key,name:profile.name},birthChart);
   byId('personal-profile').innerHTML='<div class="section-heading"><div><p class="eyebrow">Your sleep, preferences and traditions</p><h2>'+escape(personal.title)+'</h2></div><button type="button" id="edit-personal-profile" class="button button-secondary">Edit my personal profile</button></div>'+
-    '<p>'+escape(personal.introduction)+'</p>'+paragraphs(personal.summary)+
+    '<p>'+escape(personal.introduction)+'</p>'+paragraphs(personal.summary)+renderBirthChart(birthChart)+
     (personal.preferences.length?'<div class="personal-preferences">'+personal.preferences.map(item=>'<article class="preference-card"><h3>'+escape(item.title)+'</h3>'+paragraphs(item.paragraphs)+'</article>').join('')+'</div>':'')+
     '<div class="personal-profile-cards">'+personal.cards.map(card=>'<article class="personal-profile-card"><h3>'+escape(card.title)+'</h3>'+(card.subtitle?'<p class="small muted">'+escape(card.subtitle)+'</p>':'')+
       paragraphs(card.paragraphs)+'<div class="profile-comparison"><h4>'+escape(card.comparison.label)+'</h4><p>'+escape(card.comparison.text)+'</p></div><p class="profile-reflection"><strong>Notice in your own life:</strong> '+escape(card.reflection)+'</p>'+guidePages(card.sourcePages)+'</article>').join('')+'</div>'+
@@ -213,8 +226,13 @@ function personalProfile(profile,assessment) {
 byId('personal-profile').addEventListener('click',event=>{
   if(event.target.closest('#edit-personal-profile'))showProfileStep();
 });
+function renderRhythmInsights(assessment) {
+  const insight=buildRhythmInsights(answers,traditionsSelection,assessment,birthChart);
+  byId('rhythm-fit').innerHTML='<h3>'+escape(insight.title)+'</h3><p>'+escape(insight.introduction)+'</p><div class="rhythm-findings">'+insight.findings.map(item=>'<article class="rhythm-finding '+escape(item.kind)+'"><p class="eyebrow">'+escape({support:'A point of support',tension:'A point of friction',reflection:'A theme to explore',open:'Still open'}[item.kind]||'Your experience')+'</p><h4>'+escape(item.title)+'</h4><p>'+escape(item.text)+'</p></article>').join('')+'</div>'+
+    (insight.observations.length?'<details><summary>Choose one observation for the next two weeks</summary>'+insight.observations.map(item=>'<h4>'+escape(item.title)+'</h4><p>'+escape(item.text)+'</p>').join('')+'</details>':'');
+}
 function showResults(moveFocus=false) {
-  try { validateAssessment({answers,traditionsSelection,diary}); }
+  try { validateAssessment({answers,traditionsSelection,diary,chart:birthChart}); }
   catch(error) {
     byId('intro').hidden=true;byId('results').hidden=true;byId('assessment').hidden=false;
     byId('question-host').innerHTML='<div class="card"><h2>Review your answers</h2><p>'+escape(error.message)+'</p><button class="button button-secondary" id="review-invalid-answers" type="button">Review answers</button></div>';
@@ -234,6 +252,7 @@ function showResults(moveFocus=false) {
     '<details><summary>Which answers produced this result?</summary>'+bullets(activeQuestions(answers).filter(q=>['layout','naps','napType','schedule'].includes(q.id)).map(q=>q.q+' '+answerLabel(q,answers)))+'<p>Your reported sleep arrangement determines this result. Your birth signs and Human Design interpretation are compared with it below.</p></details>'+
     (assessment.edit?.length?'<div class="button-row">'+assessment.edit.map(id=>'<button type="button" class="button button-secondary" data-edit="'+id+'">Review '+escape({total:'total hours',napType:'naps',schedule:'specific schedule',layout:'usual sleep'}[id]||id)+'</button>').join('')+'</div>':'');
   personalProfile(profile,assessment);
+  renderRhythmInsights(assessment);
   byId('result-analysis').innerHTML='<h3>What your answers suggest</h3><p class="small muted">These observations come from the answers you gave. Add more detail below to expand them.</p>'+
     info.evaluations.map(item=>'<article class="evaluation '+item.level+'"><h4>'+escape(item.title)+'</h4>'+paragraphs(item.paragraphs)+'</article>').join('');
   byId('profile-detail').innerHTML=profileDetails(profile);
@@ -244,6 +263,7 @@ function showResults(moveFocus=false) {
   renderObservations();
   if(!byId('traditions-panel').hasChildNodes())renderTraditions(byId('traditions-panel'),traditionsSelection,{referenceOnly:true});
   saveProgress();
+  byId('save-profile-update').hidden=!getProfileSession();
   if(moveFocus)focusHeading(byId('results'));
 }
 byId('result-summary').addEventListener('click',event=>{
@@ -345,7 +365,7 @@ async function downloadReport(print=false) {
       } catch { closePreparingTab();preview=null; }
       byId('report-status').textContent='Preparing your printable PDF…';
     }
-    const pdf=await createSleepPdf(answers,traditionsSelection,diary,byId('report-name').value);
+    const pdf=await createSleepPdf(answers,traditionsSelection,diary,byId('report-name').value,globalThis.PDFLib,birthChart);
     if(preview?.closed) {
       byId('report-status').textContent='The printable report tab was closed. Use Print report to open it again, or choose Download PDF.';
       return;
@@ -375,6 +395,7 @@ byId('download-report').addEventListener('click',()=>downloadReport());
 byId('print-report').addEventListener('click',()=>downloadReport(true));
 document.querySelector('label[for="report-consent"] span').textContent=REPORT_CONSENT;
 document.querySelector('label[for="newsletter-consent"] span').textContent=NEWSLETTER_CONSENT;
+document.querySelector('label[for="save-profile-consent"] span').textContent=PROFILE_CONSENT;
 byId('report-name').maxLength=100;
 byId('newsletter-signature').maxLength=100;
 byId('newsletter-consent').addEventListener('change',event=>{
@@ -388,12 +409,15 @@ byId('report-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const button=byId('send-report');button.disabled=true;
   try{
-  const safe=validateAssessment({answers,traditionsSelection,diary});
+  const safe=validateAssessment({answers,traditionsSelection,diary,chart:birthChart});
+  const saveProfileConsent=byId('save-profile-consent').checked;
+  if(saveProfileConsent&&birthChart&&!birthDetailsDraft)throw new Error('Re-enter your birth details in Edit my personal profile to save this calculated chart. You can still download or email the report without saving a profile.');
   const payload={
     action:'report',...safe,email:byId('report-email').value.trim(),name:byId('report-name').value.trim(),
     reportConsent:byId('report-consent').checked,newsletterConsent:byId('newsletter-consent').checked,
     signature:byId('newsletter-consent').checked?byId('newsletter-signature').value.trim():'',
-    consentVersion:CONSENT_VERSION,reportVersion:REPORT_VERSION,website:byId('contact-website')?.value||''
+    consentVersion:CONSENT_VERSION,reportVersion:REPORT_VERSION,website:byId('contact-website')?.value||'',saveProfileConsent,
+    ...(saveProfileConsent?{profileConsentVersion:PROFILE_CONSENT_VERSION,birthDetails:birthDetailsDraft}:{})
   };
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(payload)));
   const fingerprint=[...new Uint8Array(hash)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
@@ -409,7 +433,7 @@ byId('report-form').addEventListener('submit',async event=>{
       throw new Error(result.error||result.message||'The email could not be sent. Please retry. Your PDF is also available to download.');
     }
     byId('new-report-request').hidden=true;
-    byId('report-status').textContent='Your PDF is on its way to '+payload.email+'. Check your inbox and spam folder.'+(payload.newsletterConsent?' Your signed newsletter consent has been recorded.':'');
+    byId('report-status').textContent='Your PDF is on its way to '+payload.email+'. Check your inbox and spam folder.'+(saveProfileConsent?' Open the private link in that email to confirm and return to your saved profile.':'')+(payload.newsletterConsent?' Your signed newsletter consent has been recorded.':'');
   }catch(error){byId('report-status').textContent=error.message||'The connection was interrupted. Please retry.';}
   finally{button.disabled=false;}
 });
@@ -419,6 +443,46 @@ byId('new-report-request').addEventListener('click',()=>{
   byId('new-report-request').hidden=true;
   byId('report-form').requestSubmit();
 });
+byId('save-profile-update').addEventListener('click',async()=>{
+  const button=byId('save-profile-update');button.disabled=true;
+  try {
+    if(!byId('save-profile-consent').checked)throw new Error('Choose the saved-profile consent before saving an updated assessment.');
+    if(birthChart&&!birthDetailsDraft)throw new Error('Re-enter your birth details before saving this calculated profile.');
+    const safe=validateAssessment({answers,traditionsSelection,diary,chart:birthChart});
+    const payload={...safe,birthDetails:birthDetailsDraft,reportVersion:REPORT_VERSION,saveProfileConsent:true,profileConsentVersion:PROFILE_CONSENT_VERSION};
+    const serialized=JSON.stringify(payload);
+    if(!pendingProfileSave||pendingProfileSave.payload!==serialized)pendingProfileSave={payload:serialized,id:crypto.randomUUID()};
+    byId('report-status').textContent='Saving your updated assessment…';
+    await profileRequest('profile-save',{...payload,requestId:pendingProfileSave.id});
+    byId('report-status').textContent='Your updated assessment is saved. Open Saved profiles to view your history.';
+  } catch(error) {byId('report-status').textContent=error.message||'The profile could not be saved.';}
+  finally {button.disabled=false;}
+});
+
+async function loadSavedAssessment() {
+  const savedId=new URLSearchParams(location.hash.slice(1)).get('saved');
+  if(!savedId)return;
+  if(!/^[a-f0-9-]{36}$/i.test(savedId))return;
+  history.replaceState(null,'',location.pathname+location.search);
+  if(!getProfileSession()) {
+    byId('resume-profile-status').textContent='Sign in through Saved profiles to open a private assessment.';
+    return;
+  }
+  byId('start-assessment').disabled=true;
+  byId('resume-profile-status').textContent='Opening your saved assessment…';
+  try {
+    const result=await profileRequest('profile-get',{id:savedId});
+    const safe=validateAssessment(result.assessment);
+    answers=safe.answers;traditionsSelection=safe.traditionsSelection;diary=safe.diary;
+    birthChart=safe.chart||null;birthDetailsDraft=result.assessment.birthDetails||null;profileDraft=null;
+    profileStepCompleted=true;pendingAlertnessReview=false;
+    if(result.contact?.name)byId('report-name').value=result.contact.name;
+    if(result.contact?.email)byId('report-email').value=result.contact.email;
+    byId('resume-profile-status').textContent='';
+    displayDiary();showResults(true);
+  } catch(error) {byId('resume-profile-status').textContent=error.message||'This saved assessment could not be opened.';}
+  finally {byId('start-assessment').disabled=false;}
+}
 const trap=document.createElement('label');
 trap.className='form-trap';trap.setAttribute('aria-hidden','true');
 trap.innerHTML='Website<input id="contact-website" type="text" tabindex="-1" autocomplete="off">';
@@ -426,3 +490,4 @@ byId('report-form').prepend(trap);
 restore();
 renderReference();
 renderDiary();
+loadSavedAssessment();

@@ -6,22 +6,30 @@
   <meta name="description" content="Understand your sleep pattern and compare it with your Western horoscope, Chinese zodiac and Human Design. Build a personal Cloud Forest report from your answers.">
   <meta name="theme-color" content="#edf4fa">
   <title>Sleep Patterns | Cloud Forest Field Guide</title>
-  <link rel="stylesheet" href="./styles.css?v=2026-11-24-guide-4">
+  <link rel="stylesheet" href="./styles.css?v=2026-11-24-guide-5">
+  <link rel="stylesheet" href="./profile-wizard.css?v=2026-11-24-guide-5">
   <script src="./vendor/pdf-lib.min.js" defer></script>
   <script type="importmap">
     {
       "imports": {
-        "./assessment.js": "./assessment.js?v=2026-11-24-guide-4",
-        "./guide-model.js": "./guide-model.js?v=2026-11-24-guide-4",
-        "./traditions.js": "./traditions.js?v=2026-11-24-guide-4",
-        "./birth-profile.js": "./birth-profile.js?v=2026-11-24-guide-4",
-        "./profile-ui.js": "./profile-ui.js?v=2026-11-24-guide-4",
-        "./report.js": "./report.js?v=2026-11-24-guide-4",
-        "./config.js": "./config.js?v=2026-11-24-guide-4"
+        "./assessment.js": "./assessment.js?v=2026-11-24-guide-5",
+        "./guide-model.js": "./guide-model.js?v=2026-11-24-guide-5",
+        "./traditions.js": "./traditions.js?v=2026-11-24-guide-5",
+        "./birth-profile.js": "./birth-profile.js?v=2026-11-24-guide-5",
+        "./profile-ui.js": "./profile-ui.js?v=2026-11-24-guide-5",
+        "./profile-data.js": "./profile-data.js?v=2026-11-24-guide-5",
+        "./profile-client.js": "./profile-client.js?v=2026-11-24-guide-5",
+        "./birth-chart.js": "./birth-chart.js?v=2026-11-24-guide-5",
+        "./vendor/chart-engine.js": "./vendor/chart-engine.js?v=2026-11-24-guide-5",
+        "./places.js": "./places.js?v=2026-11-24-guide-5",
+        "./rhythm-insights.js": "./rhythm-insights.js?v=2026-11-24-guide-5",
+        "./chart-view.js": "./chart-view.js?v=2026-11-24-guide-5",
+        "./report.js": "./report.js?v=2026-11-24-guide-5",
+        "./config.js": "./config.js?v=2026-11-24-guide-5"
       }
     }
   </script>
-  <script type="module" src="./app.js?v=2026-11-24-guide-4"></script>
+  <script type="module" src="./app.js?v=2026-11-24-guide-5"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -33,6 +41,7 @@
       </a>
       <nav aria-label="Main navigation">
         <a href="#pattern-explorer">Patterns</a>
+        <a href="./profile.html">Saved profiles</a>
         <a href="#learning">About sleep</a>
         <a href="./assets/Sleep-Patterns-Guide.pdf" target="_blank" rel="noopener">Read the guide</a>
       </nav>
@@ -45,11 +54,13 @@
         <p class="eyebrow">Sleep Patterns</p>
         <h1 id="intro-heading">Understand your sleep and what it means to you.</h1>
         <p class="intro-description">Find the sleep pattern your answers describe. Then explore how the Field Guide connects rest with your Western horoscope, Chinese zodiac and Human Design.</p>
-        <p class="intro-note">Start with how you have slept over the past two weeks. Add your birth-date signs and everyday preferences in the quiz, and receive a connected report. Any profile item can be left unknown.</p>
+        <p class="intro-note">Move through sleep, birth details, Chinese horoscope, Western horoscope, Human Design and everyday rhythm. Discover where your preferences fit your routine and where they feel at odds. Save your profile to return to it later.</p>
         <div class="intro-actions">
           <button id="start-assessment" class="button button-primary" type="button">Start my assessment</button>
           <a class="button button-secondary" href="#pattern-explorer">Compare sleep patterns</a>
         </div>
+        <p id="resume-profile-status" role="status"></p>
+        <p class="small muted">Bring your full birth date, local birth time and birthplace for the calculated chart. You can still complete the sleep assessment when some details are unknown.</p>
         <p class="small muted">For adult sleep education and personal reflection. This self-assessment does not diagnose a medical condition.</p>
       </div>
       <aside class="intro-aside" aria-labelledby="report-preview-heading">
@@ -57,8 +68,9 @@
         <ul class="feature-list">
           <li>Your current sleep pattern and total hours</li>
           <li>Your preferred hours, energy and what affects rest</li>
-          <li>Your Western sign and Chinese birth-year profile</li>
-          <li>Your Human Design type and the guide’s sleep teachings</li>
+          <li>Your Western Sun and Moon signs and Chinese birth-year profile</li>
+          <li>Your Human Design type, authority, profile and chart</li>
+          <li>A private assessment history and a downloadable report</li>
         </ul>
         <a class="text-link" href="./assets/Sleep-Patterns-Guide.pdf" target="_blank" rel="noopener">Explore the original Field Guide</a>
       </aside>
@@ -78,6 +90,7 @@
       </div>
       <div id="result-summary" class="card result-summary"></div>
       <div id="result-analysis" class="card"></div>
+      <section id="rhythm-fit" class="card" aria-label="Personality and sleep comparisons"></section>
       <section id="personal-profile" class="card personal-profile" aria-label="Your connected personal profile"></section>
       <div class="result-columns">
         <div id="profile-detail" class="card"></div>
@@ -115,6 +128,11 @@
             <input id="report-consent" name="reportConsent" type="checkbox" required>
             <span>I ask Cloud Forest to email my PDF report. I agree that my answers and diary will be processed to create it, and that Cloud Forest will keep my name, email address, consent and delivery record.</span>
           </label>
+          <label class="check-field" for="save-profile-consent">
+            <input id="save-profile-consent" name="saveProfileConsent" type="checkbox">
+            <span>I ask Cloud Forest to save my birth details, chart results, sleep answers and diary so I can return to them. I understand that the Cloud Forest administrator can review this saved profile. I can delete my saved profile without joining or leaving the newsletter.</span>
+          </label>
+          <p class="small muted">Saving a profile is optional. Open the private link in your report email to confirm your saved assessment. You can then return through <a href="./profile.html">Saved profiles</a>.</p>
           <label class="check-field" for="newsletter-consent">
             <input id="newsletter-consent" name="newsletter" type="checkbox" aria-controls="newsletter-signature-wrap" aria-expanded="false">
             <span>I agree to receive Cloud Forest newsletters about rest, training and learning. I can unsubscribe at any time. By typing my full name, I sign this consent.</span>
@@ -128,6 +146,7 @@
           </div>
           <p class="small"><a href="./privacy.html">How your information is handled</a></p>
           <button id="send-report" class="button button-primary" type="submit">Email my PDF report</button>
+          <button id="save-profile-update" class="button button-secondary" type="button" hidden>Save updated profile</button>
           <p id="report-status" class="status-message" role="status" aria-live="polite"></p>
           <button id="new-report-request" class="button button-secondary" type="button" hidden>Send a new request</button>
         </form>
@@ -151,6 +170,7 @@
     <p>Cloud Forest · Sleep Patterns Field Guide</p>
     <nav aria-label="Footer">
       <a href="./privacy.html">Privacy</a>
+      <a href="./profile.html">Saved profiles</a>
       <a href="./admin.html">Admin</a>
       <a href="./assets/Sleep-Patterns-Guide.pdf" target="_blank" rel="noopener">Original guide</a>
     </nav>

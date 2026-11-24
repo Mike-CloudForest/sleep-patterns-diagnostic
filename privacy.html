@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Privacy and report information | Cloud Forest</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=2026-11-24-guide-5">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -22,22 +22,30 @@
 
     <section class="card" aria-labelledby="browser-heading">
       <h2 id="browser-heading">While you use the assessment</h2>
-      <p>Your completed assessment results, selected tradition profiles and diary entries are kept in this browser tab’s session storage so you can return to them after a refresh. Closing the tab normally ends that session, although browser session restoration can bring it back.</p>
-      <p>An optional birth date is used locally to estimate your Western Sun sign and calculate your Chinese birth-year animal, element and polarity. The full date stays in the current page’s memory and is not written to session storage, PDFs or report requests. The derived signs, Chinese lunar year and calculation method can be saved with the assessment and included in the report. A refresh clears the full birth date.</p>
-      <p>You may select a Human Design type from a chart you already have. The link to Jovian Archive opens a separate chart service. This app does not automatically send it your birth details. Information you choose to enter on that service is handled under its own policies.</p>
+      <p>Your sleep answers, selected tradition profiles, derived chart results and diary entries are kept in this browser tab’s session storage so you can resume after a refresh. Closing the tab normally ends that session, although browser session restoration can bring it back.</p>
+      <p>Your birth date, local birth time and birthplace are used in the current page to calculate your Chinese birth-year profile, Western Sun and Moon signs, and Human Design chart. The full birth inputs remain in page memory while you work. A refresh clears those inputs unless you later retrieve a profile you explicitly saved with Cloud Forest. The PDF includes derived chart results and calculation notes, without the full birth date, clock time or birthplace.</p>
+      <p>The birthplace list is a static city-and-time-zone dataset downloaded from this website. City searches run in your browser. The chart also calculates locally; no birth details are automatically sent to an outside astrology service. The optional Jovian Archive link opens a separate service with its own policies.</p>
       <p>Choosing Download PDF or Print report creates your copy in the browser. Your browser and device control where a downloaded or printed copy is saved.</p>
     </section>
 
     <section class="card" aria-labelledby="email-heading">
       <h2 id="email-heading">When you request an emailed report</h2>
-      <p>The app sends your answers, selected traditions, diary entries, email address, optional name and consent choices to the report service. The service processes them to create and email your PDF.</p>
+      <p>The app sends your answers, selected traditions, derived chart results, diary entries, email address, optional name and consent choices to the report service. The service processes them to create and email your PDF.</p>
       <p>The app database retains your email address, any name you provide, report-request and delivery records, consent text and version, consent timestamps, and newsletter status. A newsletter opt-in also records the name you typed as your consent signature.</p>
-      <p>Assessment answers, diary contents and generated PDFs are processed for the email attachment and are not written to the app database. A protected request fingerprint is retained to recognize repeat submissions and help prevent duplicate emails.</p>
+      <p>If you leave the separate saved-profile choice unchecked, assessment answers, chart results and diary contents are processed for the email attachment without being written to the app database. Full birth inputs are omitted from that report-only request. A protected request fingerprint is retained to recognize repeat submissions and help prevent duplicate emails.</p>
+    </section>
+
+    <section class="card" aria-labelledby="saved-profile-heading">
+      <h2 id="saved-profile-heading">When you choose to save a profile</h2>
+      <p>The saved-profile choice starts unchecked and is separate from the newsletter. Choosing it allows Cloud Forest to retain your birth details, calculated chart, sleep and everyday-rhythm answers, diary and assessment version, linked to your contact record. The authorized Cloud Forest administrator can review the saved assessment to understand the information you chose to share.</p>
+      <p>A first saved assessment remains pending until you open the private confirmation link sent with your report. That link verifies access to the email address. Pending links and assessments expire after seven days; expired pending records are removed during later saved-profile activity. Confirmed assessments remain available until you delete the saved profile or arrange deletion with Cloud Forest.</p>
+      <p>You can return through <a href="./profile.html">Saved profiles</a>, request a private sign-in link, review assessment history and save an updated assessment. Recovery links expire after 15 minutes and can be used once. Signed-in sessions last four hours, with their private credentials held in the current tab’s session storage.</p>
+      <p>Deleting the saved profile removes saved assessments, birth inputs and chart history from the live application database and revokes profile sessions. Contact, consent, newsletter preference and report-delivery records remain. Existing emails, downloads, printed copies and service backups follow their own retention processes. Deleting a saved profile does not change your newsletter preference.</p>
     </section>
 
     <section class="card" aria-labelledby="providers-heading">
       <h2 id="providers-heading">Services that handle the information</h2>
-      <p>GitHub Pages hosts the website. Supabase runs report processing and stores the app’s contact, consent and delivery records. Hosting and processing services may keep technical request logs for operation, security and troubleshooting. The app’s own error logging uses general messages and avoids recording your answers and diary text.</p>
+      <p>GitHub Pages hosts the website. Supabase runs report processing and stores contact, consent and delivery records, plus profiles that visitors explicitly choose to save. Hosting and processing services may keep technical request logs for operation, security and troubleshooting. The app’s own error logging uses general messages and avoids recording birth inputs, answers and diary text.</p>
       <p>Resend receives your recipient address, email message and PDF attachment to send the report. It retains sent-email content, attachments and delivery or log data under its service policies. The email service may record delivery and engagement events, such as opens or link clicks, according to its settings.</p>
       <p>A report also remains in the recipient’s mailbox according to that email provider’s policies and the recipient’s choices. Provider retention periods can differ from the app’s records.</p>
       <p><a href="https://resend.com/security/gdpr" target="_blank" rel="noopener">Resend’s data handling and retention information</a> · <a href="https://resend.com/changelog/download-attachments" target="_blank" rel="noopener">Resend’s sent-attachment information</a></p>
@@ -51,7 +59,7 @@
 
     <section class="card" aria-labelledby="records-heading">
       <h2 id="records-heading">Access and retained records</h2>
-      <p>Administrator access is limited to the authorized Cloud Forest email account through an expiring sign-in link. The administrator can review contact, consent and report-delivery records and export contact lists. Administrator session credentials are kept in that browser tab’s session storage.</p>
+      <p>Administrator access is limited to the authorized Cloud Forest email account through an expiring sign-in link. The administrator can review contact, consent and report-delivery records, inspect confirmed saved assessments, and export contact lists. The contact CSV does not include birth details or assessment answers. Administrator session credentials are kept in that browser tab’s session storage.</p>
       <p>The service uses hashed network and email values for request limits. Contact, consent and delivery records are retained to manage requested reports, newsletter preferences and consent history. You can contact Cloud Forest to ask about, correct or request deletion of your records. We will review the request and any records that need to be retained.</p>
       <p>For questions or a request about your information, email <a href="mailto:sifu@cloudforesttemple.com">sifu@cloudforesttemple.com</a>.</p>
     </section>

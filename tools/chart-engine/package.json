@@ -1,0 +1,17 @@
+{
+  "name": "cloud-forest-chart-engine-build",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": {
+    "astronomy-engine": "2.1.19",
+    "hd-chart-engine": "0.1.1",
+    "luxon": "3.7.2"
+  },
+  "devDependencies": { "esbuild": "0.28.2" },
+  "overrides": {
+    "astronomy-engine": "2.1.19",
+    "luxon": "3.7.2"
+  }
+}

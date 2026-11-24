@@ -259,7 +259,7 @@ function compareProfile(theme, observed, answers) {
 
 function profileSubtitle(group, record, selection) {
   if (group === 'western') {
-    const basis = selection.westernBasis === 'date_range' ? 'Sun-sign date-range estimate'
+    const basis = selection.westernBasis === 'calculated' ? 'Sun sign calculated from birth details' : selection.westernBasis === 'date_range' ? 'Sun-sign date-range estimate'
       : selection.westernBasis === 'confirmed' ? 'Sun sign confirmed by you' : 'Sun sign selected by you';
     return record.element + ' element · ' + basis;
   }
@@ -269,11 +269,11 @@ function profileSubtitle(group, record, selection) {
     }
     return 'Animal sign selected by you';
   }
-  return 'Type from the Human Design chart you selected';
+  return selection.humanDesignBasis==='calculated'?'Type calculated from birth date, local time and time zone':'Type from the Human Design chart you selected';
 }
 
 /** Build a shared web/PDF reading without inferring an observed pattern from a birth profile. */
-export function buildPersonalProfile(answers = {}, selection = {}, observed = {}) {
+export function buildPersonalProfile(answers = {}, selection = {}, observed = {}, chart = null) {
   const selected = selectionRecords(selection).filter(({record}) => record).map(item => ({...item, theme: personalThemes[item.group][item.record.id]}));
   const name = observed.name || 'the arrangement described in your sleep result';
   const summary = ['Your current sleep result is ' + name + '. It comes from your answers about sleep and naps over the past two weeks.'];
@@ -285,6 +285,7 @@ export function buildPersonalProfile(answers = {}, selection = {}, observed = {}
     if (group === 'western' && selection.westernBasis === 'date_range') {
       paragraphs.push('This uses the guide’s conventional Sun-sign date ranges. A full birth chart uses the exact birth time and place, especially near a sign change.');
     }
+    if(group==='western'&&chart)paragraphs.push('The calculated Moon sign is '+chart.western.moon.name+'. The Field Guide’s sleep comparison uses your Sun sign; the Moon sign is additional chart context.');
     if (group === 'chinese') {
       if (selection.chineseBasis === 'lunar_new_year' && Number.isInteger(selection.chineseYear) && selection.chineseElement && selection.chinesePolarity) {
         paragraphs.push('Your birth-year label uses the Lunar New Year convention. The ' + selection.chineseElement + ' year element belongs to the year’s heavenly stem. The guide separately groups ' + record.name + ' with ' + record.phase.toLowerCase() + ' as a temperament theme; these two labels describe different parts of the tradition.');
@@ -293,7 +294,10 @@ export function buildPersonalProfile(answers = {}, selection = {}, observed = {}
         paragraphs.push('The guide’s temperament grouping for this animal is ' + record.phase.toLowerCase() + '. A birth-year element can be added when the birth date is used to establish the lunar year.');
       }
     }
-    if (group === 'humanDesign') paragraphs.push('This follows the guide’s rest teaching for your selected waking type. Human Design’s separate DreamRave sleeping chart uses different calculations and may have a different type. This report does not calculate a DreamRave chart.');
+    if (group === 'humanDesign') {
+      if(chart)paragraphs.push('Your calculated chart has '+chart.humanDesign.authorityName+' authority and a '+chart.humanDesign.profile+' profile. The chart details above explain these traditional categories.');
+      paragraphs.push('This follows the guide’s rest teaching for your '+(chart?'calculated':'selected')+' waking type. Human Design’s separate DreamRave sleeping chart uses different calculations and may have a different type. This report does not calculate a DreamRave chart.');
+    }
     const challenge = restChallenges[answers.restChallenge];
     if (challenge?.tag && theme.tags.includes(challenge.tag)) {
       paragraphs.push('You also reported ' + ({mental:'an active mind',emotional:'emotions or worry',environment:'the sleeping environment',obligations:'responsibilities'}[challenge.tag]) + ' as something that affects settling. That gives this theme a specific connection to your own answers.');
@@ -301,7 +305,7 @@ export function buildPersonalProfile(answers = {}, selection = {}, observed = {}
     return { key: group, title: title + ': ' + record.name, subtitle: profileSubtitle(group,record,selection), paragraphs, comparison: compareProfile(theme,observed,answers), reflection: theme.reflection, sourcePages: [...new Set([...record.sourcePages,...(theme.extra ? [23] : []),...(group==='chinese' && selection.chineseElement ? [20] : [])])].sort((a,b)=>a-b) };
   });
   if (selected.length) {
-    summary.push('Your selected profiles are ' + naturalList(selected.map(item=>item.record.name)) + '. Their meanings below come from the Field Guide’s traditional interpretations.');
+    summary.push('Your profiles are ' + naturalList(selected.map(item=>item.record.name)) + '. Their meanings below come from the Field Guide’s traditional interpretations.');
     const shared = Object.entries(sharedThemes).map(([key,text]) => ({key,text,members:selected.filter(item=>item.theme.tags.includes(key))})).filter(item=>item.members.length>1).sort((a,b)=>b.members.length-a.members.length).slice(0,2);
     if (shared.length) {
       for (const item of shared) summary.push(naturalList(item.members.map(member=>member.record.name)) + ' share a theme of ' + item.text + ' in the guide. Compare that theme with the preferences and circumstances you reported.');
@@ -319,7 +323,7 @@ export function buildPersonalProfile(answers = {}, selection = {}, observed = {}
   if (!selection.chinese) missing.push('Chinese animal sign');
   if (!selection.humanDesign) missing.push('Human Design type');
   if (selected.length && missing.length) summary.push(naturalList(missing) + (missing.length===1?' was':' were') + ' not supplied, so those parts of the reading remain open.');
-  if (!selection.humanDesign) summary.push('Human Design is left unknown until you supply a type from a birth chart. Birth date alone does not establish that type.');
+  if (!selection.humanDesign) summary.push('Human Design is left unknown until you add a full birth date, local birth time and birthplace, or supply a type from a chart you already have. Birth date alone does not establish that type.');
   const hours=preferredHours[answers.chronotype];
   if (hours) {
     const paragraphs=[hours[1], 'This is your self-described timing preference. It does not establish an inborn or permanent sleep requirement.'];
@@ -340,9 +344,10 @@ export function buildPersonalProfile(answers = {}, selection = {}, observed = {}
   if (Number.isInteger(answers.total) && answers.total<420) experiments.unshift({title:'Start with your reported amount of sleep',text:'Your full-day total is below seven hours. Review the age-based duration guidance in your sleep result before experimenting with the arrangement. A traditional affinity is not a reason to reduce sleep further.'});
   if (answers.alertness==='C' || answers.sleepyDriving==='yes') experiments.unshift({title:'Give unwanted sleepiness priority',text:'Review the daytime-alertness guidance in your sleep result first. A sign or type association does not explain away dozing when you intended to stay awake.'});
   if (answers.chronotype && !['unknown','variable'].includes(answers.chronotype)) experiments.push({title:'Compare preferred and required hours',text:'Record a workday and a free day. Compare the hours you choose, the hours obligations require, your total sleep and your alertness.'});
-  experiments.push({title:'Use the profile as a question to investigate',text:selected.length?'Choose one reflection from a selected profile and follow it alongside your sleep diary. Keep the schedule that provides adequate rest and fits your life; revise an interpretation when your observations disagree.':'Keep a brief record of your usual sleep and naps, including what changes on days off. You can compare that record with a birth profile later.'});
+  experiments.push({title:'Use the profile as a question to investigate',text:selected.length?'Choose one reflection from your personal profile and follow it alongside your sleep diary. Keep the schedule that provides adequate rest and fits your life; revise an interpretation when your observations disagree.':'Keep a brief record of your usual sleep and naps, including what changes on days off. You can compare that record with a birth profile later.'});
   const sources=[{title:'Sleep Patterns: A Field Guide, Part Two, pages 17–23',url:'https://mike-cloudforest.github.io/sleep-patterns-diagnostic/assets/Sleep-Patterns-Guide.pdf'}];
   if (selection.westernBasis==='date_range') sources.push({title:'Astrodienst: why Sun-sign boundary dates need birth details',url:'https://www.astro.com/faq/fq_ua_general_e.htm'});
+  if(chart)sources.push({title:'Birth chart calculation methods and accuracy',url:'https://github.com/domalhambra/hd-chart-engine'});
   if (selection.chineseBasis==='lunar_new_year') sources.push(
     {title:'Hong Kong Observatory: Lunar New Year and the year convention',url:'https://www.hko.gov.hk/en/education/astronomy-and-time/time-service/00506-what-year-is-it-today.html'},
     {title:'Hong Kong Observatory: heavenly stems and earthly branches',url:'https://www.hko.gov.hk/en/gts/time/stemsandbranches.htm'}
