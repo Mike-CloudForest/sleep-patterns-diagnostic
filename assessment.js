@@ -1,5 +1,6 @@
 import { traditionsData } from './traditions.js';
-export const REPORT_VERSION = '2026-11-24-guide-4';
+import { validateChartSummary, chartSelection } from './profile-data.js';
+export const REPORT_VERSION = '2026-11-24-guide-5';
 export const CONSENT_VERSION = '2026-11-23';
 export const REPORT_CONSENT = 'I ask Cloud Forest to email my PDF report. I agree that my answers and diary will be processed to create it, and that Cloud Forest will keep my name, email address, consent and delivery record.';
 export const NEWSLETTER_CONSENT = 'I agree to receive Cloud Forest newsletters about rest, training and learning. I can unsubscribe at any time. By typing my full name, I sign this consent.';
@@ -146,6 +147,18 @@ export const observationQuestions = [
     { l: 'variable', t: 'It changes a lot from day to day' },
     { l: 'unknown', t: 'I’m not sure' }
   ]},
+  { id: 'scheduleFit', q: 'How closely do your usual sleep hours match the hours you would choose?', opts: [
+    { l: 'match', t: 'They match well' }, { l: 'partly', t: 'They partly match' },
+    { l: 'rarely', t: 'They rarely match' }, { l: 'unknown', t: 'I’m not sure' }
+  ]},
+  { id: 'routinePreference', q: 'How do you feel when your usual routine changes?', opts: [
+    { l: 'change', t: 'I welcome the change' }, { l: 'routine', t: 'I prefer to return to my usual routine' },
+    { l: 'depends', t: 'It depends on the change' }, { l: 'unknown', t: 'I’m not sure' }
+  ]},
+  { id: 'socialRecovery', q: 'After a socially busy day, what most helps you recharge?', opts: [
+    { l: 'alone', t: 'Time on my own' }, { l: 'people', t: 'Time with other people' },
+    { l: 'varies', t: 'It varies' }, { l: 'unknown', t: 'I’m not sure' }
+  ]},
   { id: 'waking', q: 'What is waking during your main sleep usually like?', opts: [
     { l: 'none', t: 'I usually sleep through' }, { l: 'brief', t: 'I wake briefly and return to sleep easily' },
     { l: 'settled', t: 'I’m awake for a while and feel comfortable' }, { l: 'trouble', t: 'I want to sleep and struggle to get back to sleep' },
@@ -216,7 +229,7 @@ export function validateAssessment(payload) {
   }
   const selection = payload.traditionsSelection ?? {};
   if (!object(selection)) throw new Error('Review the optional tradition selections.');
-  const selectionFields = new Set(['western', 'chinese', 'humanDesign', 'westernBasis', 'chineseBasis',
+  const selectionFields = new Set(['western', 'chinese', 'humanDesign', 'westernBasis', 'chineseBasis', 'humanDesignBasis',
     'chineseYear', 'chineseElement', 'chinesePolarity']);
   if (Object.keys(selection).some(key => !selectionFields.has(key))) {
     throw new Error('Only selected profile details can be included in a report. Review the tradition selections.');
@@ -233,12 +246,14 @@ export function validateAssessment(payload) {
     traditionsSelection[id] = selection[id];
   }
   const hasValue = value => value !== undefined && value !== null && value !== '';
-  if (hasValue(selection.westernBasis) && !['date_range', 'confirmed', 'selected'].includes(selection.westernBasis)) {
+  if (hasValue(selection.westernBasis) && !['date_range', 'confirmed', 'selected', 'calculated'].includes(selection.westernBasis)) {
     throw new Error('Review how your Western sign was selected.');
   }
   if (hasValue(selection.chineseBasis) && !['lunar_new_year', 'selected'].includes(selection.chineseBasis)) {
     throw new Error('Review how your Chinese zodiac sign was selected.');
   }
+  if (hasValue(selection.humanDesignBasis) && !['selected','calculated'].includes(selection.humanDesignBasis)) throw new Error('Review how your Human Design type was selected.');
+  if (traditionsSelection.humanDesign && hasValue(selection.humanDesignBasis)) traditionsSelection.humanDesignBasis=selection.humanDesignBasis;
   // Basis metadata only accompanies a selected profile. Birth date, time and
   // place are deliberately outside this allowlist and never enter a report.
   if (traditionsSelection.western && hasValue(selection.westernBasis)) {
@@ -279,5 +294,9 @@ export function validateAssessment(payload) {
     return { date: row.date, mainMinutes: row.mainMinutes, napMinutes: row.napMinutes, energy };
   });
   if (new Set(diary.map(row => row.date)).size !== diary.length) throw new Error('Each diary date should appear once.');
-  return { answers, traditionsSelection, diary };
+  const chart=validateChartSummary(payload.chart);
+  if (!chart && (traditionsSelection.westernBasis==='calculated' || traditionsSelection.humanDesignBasis==='calculated')) throw new Error('Recalculate your birth chart or select a profile you already know.');
+  const result={answers,traditionsSelection:chartSelection(chart,traditionsSelection),diary};
+  if (chart) result.chart=chart;
+  return result;
 }

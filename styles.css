@@ -16,7 +16,7 @@
   background: var(--page);
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+html { scroll-behavior: auto; scroll-padding-top: 1rem; }
 body { margin: 0; }
 [hidden] { display: none !important; }
 a { color: var(--blue); text-underline-offset: .18em; }
@@ -284,4 +284,32 @@ caption { text-align: left; margin-bottom: .7rem; font-weight: 600; }
 @media print {
   .personal-profile-card,.preference-card {background:#fff;border-color:#bbb;}
   .profile-comparison {background:#fff;border-left-color:#555;}
+}
+
+/* Connected profile and calculated-chart presentation. */
+.rhythm-findings { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1.25rem; }
+.rhythm-finding { border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:.75rem;padding:1.1rem;background:#f7fafc; }
+.rhythm-finding.support { border-left-color:#25766a;background:#f3faf7; }
+.rhythm-finding.tension { border-left-color:#a26b21;background:#fffaf0; }
+.rhythm-finding .eyebrow { margin-bottom:.55rem;font-size:.875rem;letter-spacing:.02em; }
+#rhythm-fit>details { margin-top:1rem; }
+.calculated-chart { padding-block:1.5rem;margin-block:1.25rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line); }
+.chart-facts { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin:1rem 0; }
+.chart-facts>div { padding:1rem;background:#edf5f4;border-radius:.6rem; }
+.chart-facts dt { color:var(--muted);font-size:.9rem; }
+.chart-facts dd { font-weight:650;margin:.35rem 0 0;font-size:1.1rem; }
+.chart-warning { padding:1rem;border-left:4px solid #a26b21;background:#fff8e9;margin-block:1rem; }
+.chart-explanation { display:grid;grid-template-columns:minmax(16rem,1fr) minmax(16rem,1fr);gap:1.5rem;align-items:center; }
+.chart-explanation h4 { margin-top:1.25rem; }
+.bodygraph { margin:1rem 0;max-width:28rem; }
+.bodygraph svg { width:100%;height:auto;display:block; }
+.bodygraph figcaption { color:var(--muted);font-size:.875rem; }
+.calculated-chart details { margin-top:1rem; }
+.calculated-chart caption { text-align:left;padding:.75rem 0;font-weight:600; }
+#save-profile-update { margin-top:.75rem; }
+@media(max-width:640px) {
+  .rhythm-findings,.chart-explanation { grid-template-columns:1fr; }
+  .chart-facts>div { padding:.8rem; }
+  .chart-facts dd { font-size:1rem;overflow-wrap:anywhere; }
+  .bodygraph { margin-inline:auto;width:100%; }
 }

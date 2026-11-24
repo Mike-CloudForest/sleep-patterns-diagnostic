@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#edf4fa">
+  <title>My saved profile | Cloud Forest</title>
+  <link rel="stylesheet" href="./styles.css?v=2026-11-24-guide-5">
+  <link rel="stylesheet" href="./profile-account.css?v=2026-11-24-guide-5">
+  <script src="./vendor/pdf-lib.min.js" defer></script>
+  <script type="importmap">
+    {"imports":{
+      "./config.js":"./config.js?v=2026-11-24-guide-5",
+      "./profile-client.js":"./profile-client.js?v=2026-11-24-guide-5",
+      "./profile.js":"./profile.js?v=2026-11-24-guide-5",
+      "./assessment.js":"./assessment.js?v=2026-11-24-guide-5",
+      "./guide-model.js":"./guide-model.js?v=2026-11-24-guide-5",
+      "./traditions.js":"./traditions.js?v=2026-11-24-guide-5",
+      "./birth-profile.js":"./birth-profile.js?v=2026-11-24-guide-5",
+      "./birth-chart.js":"./birth-chart.js?v=2026-11-24-guide-5",
+      "./profile-data.js":"./profile-data.js?v=2026-11-24-guide-5",
+      "./rhythm-insights.js":"./rhythm-insights.js?v=2026-11-24-guide-5",
+      "./chart-view.js":"./chart-view.js?v=2026-11-24-guide-5",
+      "./report.js":"./report.js?v=2026-11-24-guide-5",
+      "./vendor/chart-engine.js":"./vendor/chart-engine.js?v=2026-11-24-guide-5"
+    }}
+  </script>
+  <script type="module" src="./profile.js?v=2026-11-24-guide-5"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header"><div class="header-inner">
+    <a class="brand" href="./"><span class="brand-name">Cloud Forest</span><span class="brand-section">Sleep Patterns Field Guide</span></a>
+    <nav aria-label="Main navigation"><a href="./">Start an assessment</a><a href="./privacy.html">Privacy</a></nav>
+  </div></header>
+  <main id="main-content">
+    <div id="profile-page">
+      <div class="section-heading account-heading">
+        <div><p class="eyebrow">Cloud Forest</p><h1>My saved profile</h1></div>
+        <button id="profile-logout" class="button button-secondary" type="button" hidden>Sign out</button>
+      </div>
+      <p class="account-introduction">Return to your sleep results, birth profiles and the observations you chose to save.</p>
+      <p id="profile-status" role="status" aria-live="polite" class="status-message"></p>
+
+      <section id="profile-signin" class="card account-signin" aria-labelledby="profile-signin-heading">
+        <h2 id="profile-signin-heading" tabindex="-1">Open your saved profile</h2>
+        <p>Enter the email address you used when you chose to save an assessment. We’ll send a one-time sign-in link to that address.</p>
+        <form id="profile-login-form" class="account-form">
+          <label class="field" for="profile-email"><span>Email address</span><input id="profile-email" name="email" type="email" autocomplete="email" maxlength="254" required></label>
+          <button id="profile-send-link" type="submit" class="button button-primary">Email my sign-in link</button>
+          <p id="profile-login-status" role="status" aria-live="polite" class="status-message"></p>
+        </form>
+        <p class="small muted">Only assessments you chose to save are available here. An earlier emailed PDF may not have a saved profile.</p>
+        <a class="text-link" href="./">Create a new sleep assessment</a>
+      </section>
+
+      <section id="profile-dashboard" aria-label="Your saved assessments" hidden>
+        <div class="card account-identity"><h2 id="profile-contact-name">Your profile</h2><p id="profile-contact-email"></p><p class="small muted">Your sign-in is kept in this tab. Sign out when you finish on a shared device.</p></div>
+        <div class="account-layout">
+          <section class="card account-history" aria-labelledby="profile-history-heading">
+            <div class="section-heading"><h2 id="profile-history-heading">Assessment history</h2><button id="profile-refresh" type="button" class="button button-secondary">Refresh</button></div>
+            <p class="small muted">Each entry keeps the answers and birth profile saved at that time.</p>
+            <p id="profile-history-range" class="small"></p>
+            <ol id="profile-history-list" class="account-history-list"></ol>
+            <p id="profile-empty" hidden>No confirmed assessments are saved here yet. If you just requested a report, open the saved-profile link in that email to confirm it.</p>
+            <div class="actions" aria-label="Assessment history pages"><button id="profile-previous" class="button button-secondary" type="button" disabled>Newer</button><button id="profile-next" class="button button-secondary" type="button" disabled>Older</button></div>
+            <a class="text-link" href="./">Start a new assessment</a>
+          </section>
+
+          <section id="profile-assessment" class="account-assessment" aria-labelledby="profile-assessment-heading" hidden>
+            <div class="card">
+              <p id="profile-assessment-label" class="eyebrow">Saved assessment</p>
+              <h2 id="profile-assessment-heading" tabindex="-1">Your saved results</h2>
+              <p id="profile-assessment-date" class="small muted"></p>
+              <p class="small">This view and its PDF use the saved answers with the current report wording. A previously downloaded or emailed report may use earlier wording.</p>
+              <div class="actions"><button id="profile-download" type="button" class="button button-primary">Download this PDF</button><a id="profile-edit" class="button button-secondary" href="./">Review or update answers</a></div>
+              <p class="small muted">Updating starts a new assessment from this entry. Your saved history stays available until you delete your profile.</p>
+              <p id="profile-download-status" role="status" aria-live="polite" class="status-message"></p>
+            </div>
+            <div id="profile-assessment-content"></div>
+          </section>
+        </div>
+
+        <section class="card account-delete" aria-labelledby="profile-delete-heading">
+          <h2 id="profile-delete-heading">Manage your saved information</h2>
+          <details id="profile-delete-details">
+            <summary>Delete my saved profile</summary>
+            <p>This permanently deletes all your saved assessments, birth details and saved chart results. All saved-profile sessions will be signed out.</p>
+            <p>Your contact, consent and report-delivery records remain, and your newsletter preference stays the same. Use the unsubscribe link in a newsletter to change that preference.</p>
+            <form id="profile-delete-form" class="account-form">
+              <label class="field" for="profile-delete-confirmation"><span>Type DELETE MY SAVED PROFILE to confirm</span><input id="profile-delete-confirmation" autocomplete="off" spellcheck="false" autocapitalize="characters" required aria-describedby="profile-delete-note"></label>
+              <p id="profile-delete-note" class="small muted">Deletion cannot be undone.</p>
+              <button id="profile-delete-button" type="submit" class="button button-danger" disabled>Delete my saved profile</button>
+              <p id="profile-delete-status" role="status" aria-live="polite" class="status-message"></p>
+            </form>
+          </details>
+        </section>
+      </section>
+      <noscript><p class="card">Enable JavaScript to open your saved profile. You can still read any PDF report already sent to your email.</p></noscript>
+    </div>
+  </main>
+  <footer class="site-footer"><p>Cloud Forest · Sleep Patterns Field Guide</p><nav aria-label="Footer"><a href="./">Assessment</a><a href="./privacy.html">Privacy</a></nav></footer>
+</body>
+</html>

@@ -1,4 +1,6 @@
 import { API_URL } from './config.js';
+import { guidePatterns } from './guide-model.js';
+import { renderSavedAssessment } from './profile.js';
 
 const SESSION_KEY = 'cloudforest-sleep-admin-session-v1';
 const TOKEN_FORMAT = /^[A-Za-z0-9_-]{43}$/;
@@ -10,6 +12,8 @@ if (location.hash) history.replaceState(null, '', location.pathname + location.s
 let session = restoreSession();
 let loaded = { offset: 0, limit: 50, status: 'all', nextOffset: null, total: 0 };
 let listBusy = false;
+let profileSequence = 0;
+let profileTrigger = null;
 
 function restoreSession() {
   try {
@@ -43,6 +47,7 @@ function signedOut(message = '') {
   byId('admin-summary').replaceChildren();
   byId('contact-range').textContent = '';
   byId('export-status').textContent = '';
+  closeSavedProfile(false);
   setStatus('admin-status', message);
 }
 
@@ -117,12 +122,27 @@ function renderContacts(data) {
     cell(row, contact.report_count);
     cell(row, dateText(contact.last_report_sent_at));
     cell(row, dateText(contact.created_at));
+    const saved = cell(row, contact.savedProfile ? '' : 'Not saved');
+    if (contact.savedProfile) {
+      const label = document.createElement('p');
+      label.textContent = guidePatterns[contact.savedProfile.pattern]?.name || 'Sleep assessment';
+      const created = document.createElement('p');
+      created.className = 'small muted';
+      created.textContent = dateText(contact.savedProfile.createdAt);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'button button-secondary admin-profile-button';
+      button.textContent = 'View saved profile';
+      button.setAttribute('aria-label', 'View saved profile for ' + contact.email);
+      button.addEventListener('click', () => loadSavedProfile(contact, button));
+      saved.append(label, created, button);
+    }
     rows.append(row);
   }
   if (!data.contacts.length) {
     const row = document.createElement('tr');
     const empty = cell(row, 'There are no contacts in this view.');
-    empty.colSpan = 8;
+    empty.colSpan = 9;
     rows.append(row);
   }
   byId('contact-range').textContent = data.total
@@ -146,6 +166,41 @@ function renderContacts(data) {
     summary.append(item);
   }
 }
+
+function closeSavedProfile(restoreFocus = true) {
+  profileSequence++;
+  byId('admin-saved-profile').hidden = true;
+  byId('admin-saved-content').replaceChildren();
+  byId('admin-saved-heading').textContent = 'Saved profile';
+  byId('admin-saved-meta').textContent = '';
+  byId('admin-profile-status').textContent = '';
+  if (restoreFocus && profileTrigger?.isConnected) profileTrigger.focus();
+  profileTrigger = null;
+}
+
+async function loadSavedProfile(contact, button) {
+  const requestToken = session?.token;
+  if (!requestToken || !contact.savedProfile?.id) return;
+  const sequence = ++profileSequence;
+  profileTrigger = button;
+  byId('admin-saved-profile').hidden = false;
+  byId('admin-saved-content').replaceChildren();
+  byId('admin-saved-heading').textContent = contact.name ? contact.name + '’s saved profile' : 'Saved profile';
+  byId('admin-saved-meta').textContent = contact.email;
+  setStatus('admin-profile-status', 'Loading the confirmed saved assessment…');
+  byId('admin-saved-heading').focus();
+  try {
+    const data = await api('admin-profile-get', { id: contact.savedProfile.id }, true);
+    if (session?.token !== requestToken || sequence !== profileSequence) return;
+    renderSavedAssessment(byId('admin-saved-content'), data);
+    byId('admin-saved-meta').textContent = contact.email + ' · Saved ' + dateText(data.createdAt);
+    setStatus('admin-profile-status', '');
+  } catch (error) {
+    if (session?.token === requestToken && sequence === profileSequence) setStatus('admin-profile-status', error.message, true);
+  }
+}
+
+byId('admin-close-profile').addEventListener('click', () => closeSavedProfile());
 
 function updateControls() {
   byId('contact-filter').disabled = listBusy;
