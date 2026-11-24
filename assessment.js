@@ -1,5 +1,5 @@
 import { traditionsData } from './traditions.js';
-export const REPORT_VERSION = '2026-11-24-guide-2';
+export const REPORT_VERSION = '2026-11-24-guide-3';
 export const CONSENT_VERSION = '2026-11-23';
 export const REPORT_CONSENT = 'I ask Cloud Forest to email my PDF report. I agree that my answers and diary will be processed to create it, and that Cloud Forest will keep my name, email address, consent and delivery record.';
 export const NEWSLETTER_CONSENT = 'I agree to receive Cloud Forest newsletters about rest, training and learning. I can unsubscribe at any time. By typing my full name, I sign this consent.';
@@ -131,6 +131,21 @@ export const observationQuestions = [
     { l: 'early', t: 'Early to bed, early to rise' }, { l: 'middle', t: 'Somewhere in the middle' },
     { l: 'late', t: 'Later to bed, later to rise' }, { l: 'variable', t: 'It changes' }, { l: 'unknown', t: 'I’m not sure' }
   ]},
+  { id: 'restChallenge', q: 'What is your biggest obstacle to settling for sleep?', opts: [
+    { l: 'mental', t: 'Ideas, planning or unfinished tasks' },
+    { l: 'physical', t: 'Physical discomfort or tension' },
+    { l: 'emotional', t: 'Worry or strong feelings' },
+    { l: 'environment', t: 'Noise, light or interruptions' },
+    { l: 'obligations', t: 'Work, caregiving or other commitments' },
+    { l: 'none', t: 'Nothing in particular' },
+    { l: 'unknown', t: 'I’m not sure' }
+  ]},
+  { id: 'energyStyle', q: 'How does your energy usually feel during the day?', opts: [
+    { l: 'steady', t: 'Fairly steady' },
+    { l: 'bursts', t: 'Strong bursts followed by a need to rest' },
+    { l: 'variable', t: 'It changes a lot from day to day' },
+    { l: 'unknown', t: 'I’m not sure' }
+  ]},
   { id: 'waking', q: 'What is waking during your main sleep usually like?', opts: [
     { l: 'none', t: 'I usually sleep through' }, { l: 'brief', t: 'I wake briefly and return to sleep easily' },
     { l: 'settled', t: 'I’m awake for a while and feel comfortable' }, { l: 'trouble', t: 'I want to sleep and struggle to get back to sleep' },
@@ -199,8 +214,13 @@ export function validateAssessment(payload) {
       !raw.apneaSigns.every(value => breathingOptions.some(option => option.l === value))) throw new Error('Review your sleep observations.');
     answers.apneaSigns = [...new Set(raw.apneaSigns)];
   }
-  const selection = payload.traditionsSelection || {};
+  const selection = payload.traditionsSelection ?? {};
   if (!object(selection)) throw new Error('Review the optional tradition selections.');
+  const selectionFields = new Set(['western', 'chinese', 'humanDesign', 'westernBasis', 'chineseBasis',
+    'chineseYear', 'chineseElement', 'chinesePolarity']);
+  if (Object.keys(selection).some(key => !selectionFields.has(key))) {
+    throw new Error('Only selected profile details can be included in a report. Review the tradition selections.');
+  }
   const groups = {
     western: traditionsData.western.signs,
     chinese: traditionsData.chinese.animals,
@@ -208,10 +228,47 @@ export function validateAssessment(payload) {
   };
   const traditionsSelection = {};
   for (const [id, list] of Object.entries(groups)) {
-    if (!selection[id]) continue;
+    if (selection[id] === undefined || selection[id] === null || selection[id] === '') continue;
     if (!list.some(item => item.id === selection[id])) throw new Error('Review the optional tradition selections.');
     traditionsSelection[id] = selection[id];
   }
+  const hasValue = value => value !== undefined && value !== null && value !== '';
+  if (hasValue(selection.westernBasis) && !['date_range', 'confirmed', 'selected'].includes(selection.westernBasis)) {
+    throw new Error('Review how your Western sign was selected.');
+  }
+  if (hasValue(selection.chineseBasis) && !['lunar_new_year', 'selected'].includes(selection.chineseBasis)) {
+    throw new Error('Review how your Chinese zodiac sign was selected.');
+  }
+  // Basis metadata only accompanies a selected profile. Birth date, time and
+  // place are deliberately outside this allowlist and never enter a report.
+  if (traditionsSelection.western && hasValue(selection.westernBasis)) {
+    traditionsSelection.westernBasis = selection.westernBasis;
+  }
+  if (traditionsSelection.chinese && selection.chineseBasis === 'lunar_new_year') {
+    const year = selection.chineseYear;
+    if (!Number.isInteger(year) || year < 1899 || year > 2100 ||
+      !['Wood', 'Fire', 'Earth', 'Metal', 'Water'].includes(selection.chineseElement) ||
+      !['Yin', 'Yang'].includes(selection.chinesePolarity)) {
+      throw new Error('Calculate your Chinese zodiac again or choose the animal manually.');
+    }
+    // 1984 starts a Wood Yang Rat year. Validate the full 60-year cycle
+    // independently of client-side date calculations before including it.
+    const modulo = (value, divisor) => ((value % divisor) + divisor) % divisor;
+    const animals = ['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'goat', 'monkey', 'rooster', 'dog', 'pig'];
+    const offset = year - 1984;
+    const animal = animals[modulo(offset, 12)];
+    const element = ['Wood', 'Fire', 'Earth', 'Metal', 'Water'][Math.floor(modulo(offset, 10) / 2)];
+    const polarity = modulo(offset, 2) === 0 ? 'Yang' : 'Yin';
+    if (traditionsSelection.chinese !== animal || selection.chineseElement !== element || selection.chinesePolarity !== polarity) {
+      throw new Error('The Chinese zodiac details do not match the selected lunar year. Recalculate them or choose the animal manually.');
+    }
+    Object.assign(traditionsSelection, { chineseBasis: 'lunar_new_year', chineseYear: year,
+      chineseElement: element, chinesePolarity: polarity });
+  } else if (traditionsSelection.chinese && selection.chineseBasis === 'selected') {
+    traditionsSelection.chineseBasis = 'selected';
+  }
+  // Manually selected and legacy animal signs intentionally discard any stale
+  // derived year, element or polarity instead of presenting them as calculated.
   const rawDiary = payload.diary || [];
   if (!Array.isArray(rawDiary) || rawDiary.length > 14) throw new Error('The diary can include up to 14 days.');
   const diary = rawDiary.map(row => {

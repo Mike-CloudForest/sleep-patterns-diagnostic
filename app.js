@@ -1,6 +1,7 @@
 import { questions, observationQuestions, breathingOptions, assessPattern, activeQuestions, optionsFor, answerLabel, validateAssessment, REPORT_VERSION, CONSENT_VERSION, REPORT_CONSENT, NEWSLETTER_CONSENT } from './assessment.js';
 import { guidePatterns, guideSources, guideLearningSections, guideDiaryPlan, interpretAssessment, formatSleepMinutes } from './guide-model.js';
-import { traditionsData, renderTraditions, getPatternEcho } from './traditions.js';
+import { traditionsData, renderTraditions, buildPersonalProfile } from './traditions.js';
+import { renderProfileIntake } from './profile-ui.js';
 import { createSleepPdf } from './report.js';
 import { API_URL } from './config.js';
 
@@ -18,6 +19,8 @@ let current = 0;
 let editing = false;
 let pendingEmail = null;
 let pendingAlertnessReview = false;
+let profileStepCompleted = false;
+let birthDateDraft = '';
 
 function restore() {
   try {
@@ -29,7 +32,7 @@ function restore() {
     if (stored) {
       const under18 = stored.answers?.ageBand === 'under18';
       const reviewAfternoon = stored.pendingAlertnessReview === true ||
-        (stored.reportVersion !== REPORT_VERSION && stored.answers?.alertness === 'D');
+        ((!stored.reportVersion || stored.reportVersion === '2026-11-23-guide-1') && stored.answers?.alertness === 'D');
       const retainedAnswers = {...stored.answers};
       if(under18)retainedAnswers.ageBand = 'unknown';
       // A migration may already have removed the old answer before a diary
@@ -50,16 +53,20 @@ function restore() {
       if(under18)answers.ageBand = 'under18';
       traditionsSelection = safe.traditionsSelection;
       diary = safe.diary;
+      profileStepCompleted = stored.profileStepCompleted === true;
       // The old afternoon-sleep option also covered planned naps. Ask once
       // before treating that older answer as the new main-sleep option.
       pendingAlertnessReview = reviewAfternoon;
       if(reviewAfternoon)delete answers.alertness;
-      byId('start-assessment').textContent = hasCompleteAssessment() ? 'View my saved results' : reviewAfternoon ? 'Review my saved answers' : 'Start my assessment';
+      byId('start-assessment').textContent = startLabel();
     }
   } catch { /* An incomplete or old session starts with a clean assessment. */ }
 }
 function saveProgress() {
-  try { sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({answers,traditionsSelection,diary,reportVersion:REPORT_VERSION,pendingAlertnessReview})); } catch {}
+  try { sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({answers,traditionsSelection,diary,reportVersion:REPORT_VERSION,pendingAlertnessReview,profileStepCompleted})); } catch {}
+}
+function startLabel() {
+  return hasCompleteAssessment() ? (profileStepCompleted?'View my saved results':'Complete my personal profile') : pendingAlertnessReview?'Review my saved answers':'Start my assessment';
 }
 function hasCompleteAssessment() {
   if(pendingAlertnessReview || answers.ageBand === 'under18' || !ageQuestion.opts.some(option=>option.l===answers.ageBand))return false;
@@ -73,7 +80,7 @@ function focusHeading(element) {
   if (heading) {heading.tabIndex=-1;heading.focus({preventScroll:true});heading.scrollIntoView({block:'start',behavior:'auto'});}
 }
 function showQuestion() {
-  if (current>=route().length) {editing=false;showResults(true);return;}
+  if (current>=route().length) {editing=false;if(profileStepCompleted)showResults(true);else showProfileStep();return;}
   const question=route()[current];
   const helper=question.id==='naps' && answers.layout==='B'
     ? 'Count naps outside your two main stretches of sleep.' : question.help;
@@ -122,14 +129,14 @@ function recordAnswer(value) {
 byId('start-assessment').addEventListener('click',()=>{
   byId('intro').hidden=true;byId('assessment').hidden=false;byId('results').hidden=true;
   editing=false;
-  if(hasCompleteAssessment()){showResults(true);return;}
+  if(hasCompleteAssessment()){if(profileStepCompleted)showResults(true);else showProfileStep();return;}
   current=answers.ageBand==='under18'?0:Math.max(0,route().findIndex(q=>answers[q.id]===undefined));
   editing=Object.keys(answers).length>0;
   showQuestion();
 });
 document.querySelector('.brand').addEventListener('click',()=>{
   byId('intro').hidden=false;byId('assessment').hidden=true;byId('results').hidden=true;
-  byId('start-assessment').textContent=hasCompleteAssessment()?'View my saved results':'Start my assessment';
+  byId('start-assessment').textContent=startLabel();
 });
 byId('question-host').addEventListener('click',event=>{
   const button=event.target.closest('button');
@@ -173,6 +180,39 @@ function profileDetails(profile) {
     '<details><summary>Context and evidence</summary>'+paragraphs([...profile.context,...profile.evidence])+sources(profile.sourceIds)+'</details>'+
     guidePages(profile.guideSource.pages);
 }
+function showProfileStep() {
+  byId('intro').hidden=true;byId('results').hidden=true;byId('assessment').hidden=false;
+  saveProgress();
+  renderProfileIntake(byId('question-host'), {
+    selection:traditionsSelection,answers,birthDate:birthDateDraft,
+    onContinue:profile=>{
+      const updated={...answers};
+      for(const [id,value] of Object.entries(profile.preferences)){if(value)updated[id]=value;else delete updated[id];}
+      if(profile.ageBand)updated.ageBand=profile.ageBand;
+      const safe=validateAssessment({answers:updated,traditionsSelection:profile.selection,diary});
+      answers=safe.answers;traditionsSelection=safe.traditionsSelection;
+      birthDateDraft=profile.birthDate;profileStepCompleted=true;
+      showResults(true);
+    },
+    onSkip:()=>{profileStepCompleted=true;showResults(true);},
+    onBack:()=>{current=Math.max(0,route().length-1);editing=false;showQuestion();},
+    onAgeGate:()=>{birthDateDraft='';profileStepCompleted=false;current=0;recordAnswer('under18');}
+  });
+  focusHeading(byId('question-host'));
+}
+function personalProfile(profile,assessment) {
+  const personal=buildPersonalProfile(answers,traditionsSelection,{key:assessment.key,name:profile.name});
+  byId('personal-profile').innerHTML='<div class="section-heading"><div><p class="eyebrow">Your sleep, preferences and traditions</p><h2>'+escape(personal.title)+'</h2></div><button type="button" id="edit-personal-profile" class="button button-secondary">Edit my personal profile</button></div>'+
+    '<p>'+escape(personal.introduction)+'</p>'+paragraphs(personal.summary)+
+    (personal.preferences.length?'<div class="personal-preferences">'+personal.preferences.map(item=>'<article class="preference-card"><h3>'+escape(item.title)+'</h3>'+paragraphs(item.paragraphs)+'</article>').join('')+'</div>':'')+
+    '<div class="personal-profile-cards">'+personal.cards.map(card=>'<article class="personal-profile-card"><h3>'+escape(card.title)+'</h3>'+(card.subtitle?'<p class="small muted">'+escape(card.subtitle)+'</p>':'')+
+      paragraphs(card.paragraphs)+'<div class="profile-comparison"><h4>'+escape(card.comparison.label)+'</h4><p>'+escape(card.comparison.text)+'</p></div><p class="profile-reflection"><strong>Notice in your own life:</strong> '+escape(card.reflection)+'</p>'+guidePages(card.sourcePages)+'</article>').join('')+'</div>'+
+    (personal.experiments.length?'<section class="profile-observations"><h3>What to explore over the next two weeks</h3>'+personal.experiments.map(item=>'<h4>'+escape(item.title)+'</h4><p>'+escape(item.text)+'</p>').join('')+'</section>':'')+
+    (personal.sources?.length?'<details><summary>Sources and calculation notes</summary><ul class="source-list">'+personal.sources.map(source=>'<li><a href="'+escape(source.url)+'" target="_blank" rel="noopener">'+escape(source.title)+'</a></li>').join('')+'</ul></details>':'');
+}
+byId('personal-profile').addEventListener('click',event=>{
+  if(event.target.closest('#edit-personal-profile'))showProfileStep();
+});
 function showResults(moveFocus=false) {
   try { validateAssessment({answers,traditionsSelection,diary}); }
   catch(error) {
@@ -186,11 +226,14 @@ function showResults(moveFocus=false) {
   const assessment=assessPattern(answers);
   const info=interpretAssessment(answers,assessment);
   const profile=info.profile;
-  byId('result-summary').innerHTML='<p class="eyebrow">Your reported pattern</p><h2>'+escape(profile.name)+'</h2>'+
+  byId('intro').hidden=true;
+  byId('result-summary').innerHTML='<p class="eyebrow">Your current sleep pattern</p><h2>'+escape(profile.name)+'</h2>'+
     '<p class="lead">'+escape(assessment.reason||profile.overview[0])+'</p>'+
     (answers.layout==='B'&&answers.naps==='B'?'<p>You also nap on some days.</p>':'')+
     '<div class="result-facts"><div><span>Reported sleep in 24 hours</span><strong>'+escape(formatSleepMinutes(answers.total))+'</strong></div><div><span>Afternoon alertness</span><strong>'+escape(answerLabel(questions.find(q=>q.id==='alertness'),answers))+'</strong></div></div>'+
+    '<details><summary>Which answers produced this result?</summary>'+bullets(activeQuestions(answers).filter(q=>['layout','naps','napType','schedule'].includes(q.id)).map(q=>q.q+' '+answerLabel(q,answers)))+'<p>Your reported sleep arrangement determines this result. Your birth signs and Human Design interpretation are compared with it below.</p></details>'+
     (assessment.edit?.length?'<div class="button-row">'+assessment.edit.map(id=>'<button type="button" class="button button-secondary" data-edit="'+id+'">Review '+escape({total:'total hours',napType:'naps',schedule:'specific schedule',layout:'usual sleep'}[id]||id)+'</button>').join('')+'</div>':'');
+  personalProfile(profile,assessment);
   byId('result-analysis').innerHTML='<h3>What your answers suggest</h3><p class="small muted">These observations come from the answers you gave. Add more detail below to expand them.</p>'+
     info.evaluations.map(item=>'<article class="evaluation '+item.level+'"><h4>'+escape(item.title)+'</h4>'+paragraphs(item.paragraphs)+'</article>').join('');
   byId('profile-detail').innerHTML=profileDetails(profile);
@@ -198,8 +241,8 @@ function showResults(moveFocus=false) {
   byId('next-steps').innerHTML='<h3>Your next steps</h3>'+bullets([...new Set([...info.actions,...profile.nextSteps])])+
     '<p><a href="#diary-panel">Record the next two weeks</a></p>';
   byId('sources').innerHTML='<details><summary>Sources for this evaluation</summary>'+sources(info.sourceIds)+guidePages(profile.guideSource.pages)+'</details>';
-  if(!byId('details-form'))renderObservations();
-  if(!byId('traditions-panel').hasChildNodes())renderTraditions(byId('traditions-panel'),traditionsSelection);
+  renderObservations();
+  if(!byId('traditions-panel').hasChildNodes())renderTraditions(byId('traditions-panel'),traditionsSelection,{referenceOnly:true});
   saveProgress();
   if(moveFocus)focusHeading(byId('results'));
 }
@@ -227,10 +270,6 @@ byId('details-panel').addEventListener('submit',event=>{
   answers.apneaSigns=form.getAll('apneaSigns');
   showResults();byId('details-status').textContent='Your evaluation and PDF now include these observations.';
   focusHeading(byId('result-analysis'));
-});
-byId('traditions-panel').addEventListener('traditionschange',event=>{
-  traditionsSelection=event.detail;
-  saveProgress();
 });
 function renderReference() {
   const ids=['monophasic','biphasic_siesta','biphasic_nap','segmented','segmented_naps','triphasic','everyman','uberman','irregular'];

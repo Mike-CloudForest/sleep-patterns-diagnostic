@@ -11,7 +11,13 @@ An adult educational assessment built from *Sleep Patterns — A Field Guide*. I
 
 ## Using the assessment
 
-Answer the core questions about your main sleep, naps, total sleep and afternoon alertness. The questions adapt to your answers. The result explains the closest matching arrangement and identifies answers that need clarification.
+Answer the core questions about your main sleep, naps, total sleep and afternoon alertness. The questions adapt to your answers. The result explains the closest matching arrangement, shows which answers produced it, and identifies answers that need clarification.
+
+The quiz then presents a personal-profile step. A birth date can estimate the Western Sun sign and calculate the Chinese lunar-year animal, year element and yin/yang. Dates near a Western sign transition ask for confirmation; the app uses the Lunar New Year boundary for Chinese year labels. Known signs can also be selected manually. The full birth date stays in page memory and is omitted from session storage, PDFs, report requests and the external chart link.
+
+Human Design uses a type from the visitor's existing chart. Visitors who do not know it can open Jovian Archive's official chart calculator, which asks for date, time and birthplace, then return and select the type. This app does not infer that type from personality or sleep answers, calculate a complete natal/Four Pillars chart, or calculate the separate DreamRave sleeping chart.
+
+Preferred hours, the main obstacle to settling, and daily energy are available in that same step. The connected report compares each selected tradition with the actual reported sleep arrangement, explains similarities or differences, identifies shared traditional themes, and offers specific observations. The web result and PDF use the same synthesis. The traditional profiles never change the observed sleep classification or establish a biological sleep requirement.
 
 The learning sections expand on sleep stages, sleep pressure, circadian timing, chronotype, schedule changes and the guide's examples. Optional observations add context. The optional Western zodiac, Chinese zodiac and Human Design sections present the guide's traditional reflections. A diary can include up to 14 distinct dates.
 
@@ -36,6 +42,7 @@ The app maintains a contact and consent list for this assessment. CSV files incl
 | `assessment.js` | Question routing, validation, consent copy and report version |
 | `guide-model.js` | Guide-based explanations, source references and diary guidance |
 | `traditions.js` | Optional tradition profiles and comparisons |
+| `birth-profile.js`, `profile-ui.js` | Local birth-date lookup and the quiz's personal-profile step |
 | `report.js` | Shared deterministic PDF generator |
 | `app.js`, `index.html`, `styles.css` | Public assessment and browser report controls |
 | `admin.*`, `unsubscribe.*`, `privacy.html` | Administration, preference confirmation and privacy information |
@@ -55,6 +62,8 @@ The application database retains contact details, consent events, newsletter sta
 Contact, consent and delivery records currently have no automatic deletion schedule. An unsubscribe updates the newsletter preference while retaining consent and report history. Contact `sifu@cloudforesttemple.com` for record questions, corrections or deletion requests. The public privacy page contains the fuller explanation.
 
 ## Verification recorded during implementation
+
+Run `node --test tests/*.test.mjs` for the recorded regression suite. The November 24 profile release has 60 passing test groups covering 24 contrasting answer scenarios and all 14 sleep outcomes; all 720 Western × Chinese × Human Design combinations; selected-profile comparisons; Chinese New Year fixtures from Hong Kong Observatory; Western boundary dates; unsupported calendars; and validation that excludes raw birth details. Synthetic report checks also confirm that the same selected signs produce different comparison text when the sleep answers change, the PDF includes all three selected profiles, and repeated generation produces identical bytes.
 
 Local checks covered validation, consent requirements, request replay, identical PDF/email bytes on retry, changed-payload rejection, signed unsubscribe verification, owner-only sign-in mail, one-use login tokens, session logout, CSV escaping and request-size/CORS limits. The backend checks used mocked database and email responses, with zero actual email sends.
 

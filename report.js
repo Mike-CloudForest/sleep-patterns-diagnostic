@@ -1,6 +1,6 @@
 import { assessPattern, activeQuestions, observationQuestions, breathingOptions } from './assessment.js';
-import { buildGuideReport, guideLearningSections, guideSources, formatSleepMinutes } from './guide-model.js';
-import { getTraditionReport, getPatternEcho } from './traditions.js';
+import { buildGuideReport, guidePatterns, guideLearningSections, guideSources, formatSleepMinutes } from './guide-model.js';
+import { buildPersonalProfile } from './traditions.js';
 
 function printable(text) {
   return String(text).replace(/[–—−]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
@@ -83,7 +83,31 @@ export async function createSleepPdf(answers, selection = {}, diary = [], name =
     write(item.text,item.kind);
     if (item.kind==='title' && name.trim()) write('Prepared for '+name.trim());
   }
-  newPage();
+  const personal=buildPersonalProfile(answers,selection,{key:assessment.key,name:guidePatterns[assessment.key]?.name});
+  if(y<400)newPage();else y-=18;
+  write(personal.title,'title');
+  write(personal.introduction);
+  personal.summary.forEach(text=>write(text));
+  for(const preference of personal.preferences) {
+    write(preference.title,'heading');
+    preference.paragraphs.forEach(text=>write(text));
+  }
+  for(const card of personal.cards) {
+    write(card.title,'heading');
+    if(card.subtitle)write(card.subtitle);
+    card.paragraphs.forEach(text=>write(text));
+    write(card.comparison.label,'heading');
+    write(card.comparison.text);
+    write('Notice in your own life: '+card.reflection);
+    write('Field Guide pages '+card.sourcePages.join(', '));
+  }
+  write('What to explore over the next two weeks','heading');
+  personal.experiments.forEach(item=>{write(item.title,'heading');write(item.text);});
+  if(personal.sources?.length) {
+    write('Sources for your personal profile','heading');
+    personal.sources.forEach(source=>write(source.title+' - '+source.url));
+  }
+  if(y<400)newPage();else y-=18;
   write('Understanding the sleep behind the pattern','title');
   const learningSections=guideLearningSections.filter(item=>['stages','two-processes','changing'].includes(item.id));
   for (const section of learningSections) {
@@ -95,23 +119,6 @@ export async function createSleepPdf(answers, selection = {}, diary = [], name =
   for(const id of [...new Set(learningSections.flatMap(section=>section.sourceIds))]) {
     const source=guideSources[id];
     if(source)write(source.title+' - '+source.url);
-  }
-  if (Object.values(selection).some(Boolean)) {
-    newPage();
-    write('Your optional tradition reflections','title');
-    for (const section of getTraditionReport(selection)) {
-      write(section.title,'heading');
-      section.paragraphs.forEach(text=>write(text));
-      write('Field Guide pages '+section.sourcePages.join(', '));
-    }
-    const echo=getPatternEcho(assessment.key);
-    if (echo) {
-      write('The guide’s comparison for your pattern','heading');
-      for (const [key,value] of Object.entries(echo)) {
-        if (['western','chinese','humanDesign'].includes(key) && value) write(String(value));
-      }
-      write('Field Guide page 23');
-    }
   }
   newPage();
   write(diary.length?'Your sleep diary':'A two-week sleep record','title');

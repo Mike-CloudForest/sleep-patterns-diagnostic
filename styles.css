@@ -251,3 +251,37 @@ caption { text-align: left; margin-bottom: .7rem; font-weight: 600; }
 #profile-detail h4,#explored-pattern h4 {margin-top:1.2rem;}
 #details-form fieldset {margin:1.5rem 0;}
 #diary-entries {margin:1.2rem 0;}
+.profile-intake fieldset {min-width:0;margin:1.6rem 0;padding:1.2rem;border:1px solid var(--line);border-radius:.6rem;}
+.profile-intake legend {font-size:1.1rem;font-weight:650;padding-inline:.35rem;}
+.profile-intake fieldset>p:first-of-type {margin-top:0;}
+.birth-lookup-row {display:flex;align-items:end;gap:.75rem;flex-wrap:wrap;}
+.birth-lookup-row .field {flex:1 1 13rem;}
+.profile-lookup-status {padding:.85rem 1rem;background:var(--blue-light);border-radius:.45rem;font-size:.95rem;}
+.profile-lookup-status:empty {display:none;}
+.preference-fields {display:grid;gap:1.3rem;}
+.personal-profile {margin-top:1.2rem;}
+.personal-profile .section-heading h2 {font-size:clamp(1.4rem,3vw,1.9rem);}
+.personal-preferences {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:1rem;margin:1.5rem 0;}
+.preference-card {background:var(--blue-light);padding:1.1rem;border-radius:.6rem;}
+.preference-card h3 {font-size:1.1rem;}
+.preference-card p {font-size:.95rem;}
+.personal-profile-cards {display:grid;gap:1.3rem;margin-top:1.5rem;}
+.personal-profile-card {border:1px solid var(--line);border-radius:.6rem;padding:clamp(1rem,2.5vw,1.5rem);}
+.personal-profile-card h3 {font-size:1.35rem;}
+.profile-comparison {background:#f0f5f8;border-left:3px solid var(--blue);border-radius:.3rem;padding:1rem 1.15rem;margin:1rem 0;}
+.profile-comparison h4 {margin:0 0 .5rem;font-size:1.05rem;}
+.profile-comparison p {margin-bottom:0;}
+.profile-reflection {margin-top:1rem;}
+.profile-observations {border-top:1px solid var(--line);padding-top:1.3rem;margin-top:1.5rem;}
+.profile-observations h4 {margin-top:1.2rem;}
+@media (max-width:580px) {
+  .profile-intake fieldset {padding:.9rem;}
+  .birth-lookup-row {align-items:stretch;flex-direction:column;}
+  .birth-lookup-row .field {flex:auto;}
+  .profile-intake .button-row {flex-direction:column;}
+  #edit-personal-profile {width:100%;}
+}
+@media print {
+  .personal-profile-card,.preference-card {background:#fff;border-color:#bbb;}
+  .profile-comparison {background:#fff;border-left-color:#555;}
+}

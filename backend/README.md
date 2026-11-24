@@ -34,6 +34,8 @@ Increment `REPORT_VERSION` whenever a change affects the generated report or ema
 
 Use JSON `POST` requests with an `action` field. The service limits each body to 50 KiB and rejects a populated `website` honeypot. It validates assessment fields and generates attachments on the server.
 
+The optional profile uses `traditionsSelection` with Western, Chinese and Human Design IDs. It can include `westernBasis`, `chineseBasis`, and the derived `chineseYear`, `chineseElement`, and `chinesePolarity`. A Chinese profile marked `lunar_new_year` must match the year cycle; manual selections discard stale calculation details. Full birth dates, birth times and birthplaces are not accepted profile fields. The browser's date lookup is local and is not a backend dependency. `chronotype`, `restChallenge` and `energyStyle` are optional validated sleep observations. The shared report generator includes the same connected profile as the website.
+
 | Action | Authentication and behavior |
 | --- | --- |
 | `report` | Public. Requires report consent, version fields and a UUID `requestId`. Newsletter opt-in also requires a typed signature. |

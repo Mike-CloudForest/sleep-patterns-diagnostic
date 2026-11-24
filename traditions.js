@@ -144,6 +144,219 @@ export function getPatternEcho(patternKey) {
   return traditionsData.comparison.rows.find(row => row.key === (aliases[patternKey] || patternKey)) || null;
 }
 
+// These notes expand the guide's own descriptions into questions a reader can
+// compare with everyday experience. They are not personality-test scores.
+const personalThemes = {
+  western: {
+    aries: { temperament: 'Initiative and physical activity are the main themes in the guide’s Aries portrait.', rest: 'Its useful question is whether an active day helps you settle, and whether unfinished activity or a busy mind follows you into bedtime.', reflection: 'On days when you feel physically satisfied, do you settle more easily while still allowing enough sleep?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['physical','mental'] },
+    taurus: { temperament: 'Comfort, predictability and an unhurried rest period are the main themes in this portrait.', rest: 'Consider how the bed, room and bedtime routine affect your willingness to stop for the day. The guide’s longer-sleep association gives you a question to explore; your reported hours and daytime functioning establish whether your current rest is serving you.', reflection: 'Which familiar comforts help you settle, and which interruptions most often shorten your main sleep?', patterns: ['monophasic','biphasic_siesta'], related: ['occasional_naps','main_sleep','biphasic_other'], tags: ['routine','environment'] },
+    gemini: { temperament: 'Mental activity, curiosity and a wakeful interval are central to the guide’s Gemini portrait.', rest: 'The guide imagines two substantial sleeps with a comfortable interval between them. If your waking feels frustrating or leaves you tired, include that experience when evaluating the arrangement.', reflection: 'When you wake for a long period, is it comfortable and followed by enough sleep, or are you trying unsuccessfully to get back to sleep?', patterns: ['segmented','segmented_naps'], related: [], tags: ['mental','flexible'], extra: 'The comparison table also connects Gemini with segmented sleep plus naps.' },
+    cancer: { temperament: 'A settled household and a sense of emotional security are the central themes in this portrait.', rest: 'Compare familiar and unfamiliar sleeping environments, and evenings when family responsibilities are settled or still active. These concrete circumstances can help you decide which parts of the description fit your life.', reflection: 'How does your sleep change when the household is settled, when you are responsible for someone, or when you sleep away from home?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['emotional','environment'] },
+    leo: { temperament: 'Activity, visibility and protecting enough private rest are the main themes in the guide’s Leo portrait.', rest: 'The guide asks whether social demands or the wish to keep going make bedtime negotiable. Its comparison table also includes a siesta, which is a traditional association to compare with a nap you already take.', reflection: 'Do you put off rest to stay available to others, and how do you feel after evenings with a clear stopping time?', patterns: ['monophasic','biphasic_siesta'], related: ['occasional_naps','main_sleep','biphasic_other'], tags: ['physical','routine'], extra: 'The comparison table also associates Leo with a main sleep and a siesta.' },
+    virgo: { temperament: 'Order, precision and completing the day’s unfinished details are the main themes in this portrait.', rest: 'The guide suggests setting tasks down in writing before bed. As a personal observation, compare evenings when the next day is organized with evenings when you continue planning in bed.', reflection: 'Does writing down tomorrow’s tasks make it easier to stop mentally rehearsing them?', patterns: ['monophasic','biphasic_nap'], related: ['occasional_naps','main_sleep','biphasic_other'], tags: ['routine','mental'], extra: 'The comparison table also includes a main sleep with a short nap.' },
+    libra: { temperament: 'Harmony, a comfortable setting and sensitivity to interpersonal conflict are the themes in the guide’s Libra portrait.', rest: 'Look at the connection between the evening’s social atmosphere and your own experience of settling. The guide allows both one main sleep and an afternoon rest, so it does not identify a single arrangement for every Libra.', reflection: 'On evenings with conflict or social pressure, what changes in your bedtime, thoughts or ability to settle?', patterns: ['monophasic','biphasic_nap'], related: ['occasional_naps','main_sleep','biphasic_other','biphasic_siesta'], tags: ['emotional','environment'] },
+    scorpio: { temperament: 'Later hours, privacy and vivid dreaming are themes in this portrait.', rest: 'The guide allows either a late main sleep or a split main sleep. Compare that description with the hours you would actually choose on a free day; the timing preference you report is more specific to you than a sign label.', reflection: 'When you can choose your hours, do later sleep and wake times feel comfortable and leave you alert?', patterns: ['monophasic','segmented'], related: ['occasional_naps','main_sleep','segmented_naps'], tags: ['flexible','environment'] },
+    sagittarius: { temperament: 'Movement, travel and sensitivity to a restrictive routine are themes in this portrait.', rest: 'The guide describes changing hours and a possible affinity with a main sleep plus a nap. Use that as a way to examine what travel or changing obligations do to your sleep, while keeping enough total rest in view.', reflection: 'Which changes in location or obligations alter your hours, and which parts of your routine remain workable across those changes?', patterns: ['irregular','biphasic_nap','biphasic_siesta','biphasic_other'], related: ['occasional_naps'], tags: ['flexible','physical'] },
+    capricorn: { temperament: 'Discipline, predictable hours and commitment to responsibilities are the main themes in this portrait.', rest: 'The guide also describes cutting rest during demanding periods. Compare the sleep opportunity you intend to protect with the time work, training or caregiving actually leaves available.', reflection: 'Do ambitious or demanding periods reduce your sleep, even when your bedtime routine is otherwise consistent?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['routine','obligations'] },
+    aquarius: { temperament: 'Independence and personally chosen schedules are the themes in the guide’s Aquarius portrait.', rest: 'Its associations are deliberately broad. The guide’s comparison table mentions segmented sleep with naps and polyphasic experimentation, but this does not establish a need to split sleep or reduce its total. Examine whether your current arrangement supports the hours you need to be awake.', reflection: 'Which parts of your schedule are a personal preference, and which come from work, habit or an experiment that may no longer suit you?', patterns: [], related: ['segmented_naps','triphasic','everyman','uberman','dymaxion','uberman_dymaxion','polyphasic_other'], tags: ['flexible','mental'], open: true },
+    pisces: { temperament: 'Dreaming, emotional sensitivity and a protected bedtime are the themes in this portrait.', rest: 'The guide describes longer main sleep or two main stretches, sometimes alongside naps. Consider whether your room and evening boundaries let you stop taking on demands and notice your own tiredness.', reflection: 'What helps you feel settled enough to sleep, and how refreshed are you after the amount of sleep you usually get?', patterns: ['monophasic','segmented'], related: ['occasional_naps','main_sleep','segmented_naps','biphasic_nap','biphasic_siesta','biphasic_other'], tags: ['emotional','environment'] }
+  },
+  chinese: {
+    rat: { temperament: 'Alertness, quick mental activity and later hours are the themes in the guide’s Rat portrait.', rest: 'Its segmented-sleep association describes a wakeful interval between two substantial sleeps. Compare the comfort of that interval and the full-day total with what you actually experience.', reflection: 'If you are awake during the night, do you return to a sufficient second sleep and feel alert the next day?', patterns: ['segmented'], related: ['segmented_naps'], tags: ['mental','flexible'] },
+    ox: { temperament: 'Steadiness, early hours and a dependable routine are the themes in this portrait.', rest: 'The guide associates Ox with one main sleep. The personal question is how consistent hours feel to you, especially when comparing workdays and days off.', reflection: 'Does a predictable sleep and wake schedule feel comfortable, or do obligations make it hard to keep?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['routine'] },
+    tiger: { temperament: 'Periods of activity followed by substantial rest are the themes in the guide’s Tiger portrait.', rest: 'Its biphasic association includes a meaningful nap as well as a main sleep. If you already nap, compare how you feel before and after it and whether it affects the following main sleep.', reflection: 'Do planned naps fit comfortably around your main sleep, and do they leave you more alert afterward?', patterns: ['biphasic_siesta'], related: ['biphasic_nap','biphasic_other','occasional_naps'], tags: ['physical','flexible'] },
+    rabbit: { temperament: 'Quiet, protection from disturbance and gentle transitions into rest are the themes in this portrait.', rest: 'The guide associates Rabbit with a long main sleep. Observe how noise, light, interruptions and the feeling of being settled in a room affect your actual rest.', reflection: 'Which change in the sleeping environment makes the clearest difference to interruptions or comfort?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['environment','routine'] },
+    dragon: { temperament: 'Intense effort and a strong recovery period are themes in the guide’s Dragon portrait.', rest: 'The guide describes a main sleep with recovery naps after demanding days. Compare ordinary days with unusually demanding ones, and notice whether recovery is planned or repeatedly postponed.', reflection: 'After a demanding day, do you allow enough recovery, or does the next commitment shorten it again?', patterns: ['monophasic','occasional_naps','biphasic_nap'], related: ['main_sleep','biphasic_other','biphasic_siesta'], tags: ['physical','obligations'] },
+    snake: { temperament: 'Stillness, slower transitions and a contemplative wakeful interval are themes in this portrait.', rest: 'The guide links Snake with segmented sleep. The useful distinction is between a comfortable period awake and an unwanted interruption that reduces your total sleep.', reflection: 'Does a quiet interval during the night feel restorative or frustrating, and how does it affect the next day?', patterns: ['segmented'], related: ['segmented_naps'], tags: ['mental','environment'] },
+    horse: { temperament: 'Movement, independence and sensitivity to confinement are themes in the guide’s Horse portrait.', rest: 'The guide describes a main sleep plus a nap, and its comparison table also mentions changing sleep in unsettled circumstances. Look at the role of your environment and obligations before deciding that variable hours are a fixed personal trait.', reflection: 'Are your changing hours a preference, or a response to travel, the room, work or other demands?', patterns: ['biphasic_nap','biphasic_siesta','biphasic_other'], related: ['occasional_naps','irregular'], tags: ['physical','flexible'], extra: 'The comparison table also describes irregular sleep when circumstances are unsettled.' },
+    goat: { temperament: 'A settled home, companionship and emotional ease are the themes in this portrait.', rest: 'The guide associates Goat with an early, regular main sleep. Compare how household worries or changes in routine relate to your ability to settle.', reflection: 'When the household feels settled, do you fall asleep or stay asleep differently?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['emotional','routine'] },
+    monkey: { temperament: 'Mental activity, experimentation and changing rest arrangements are themes in the guide’s Monkey portrait.', rest: 'The guide’s individual profile describes segmented sleep plus naps; its comparison table also mentions more divided schedules. These are descriptive associations. Your total rest and alertness remain central when evaluating a complex schedule.', reflection: 'Does your current arrangement serve your day, or are unusual naps compensating for sleep that was shortened earlier?', patterns: ['segmented_naps'], related: ['segmented','triphasic','everyman','uberman','dymaxion','uberman_dymaxion','polyphasic_other','irregular'], tags: ['mental','flexible'], extra: 'The comparison table also includes Monkey among its illustrations of more divided sleep.' },
+    rooster: { temperament: 'Early waking, precise timing and protection of bedtime are the themes in this portrait.', rest: 'The guide associates Rooster with one early main sleep. Compare that description with your preferred hours on a day without an alarm or a fixed obligation.', reflection: 'Would you still choose an early bedtime and wake time on a free day?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['routine'] },
+    dog: { temperament: 'Attention to the household and sensitivity to its sounds are themes in the guide’s Dog portrait.', rest: 'The guide describes one main sleep that may be lighter later in the night. Observe actual interruptions and responsibilities, rather than assuming every awakening belongs to the animal sign.', reflection: 'Which sounds or household responsibilities wake you, and can any of those interruptions be reduced?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['environment','obligations'] },
+    pig: { temperament: 'Comfort, willingness to rest and an unhurried main sleep are themes in this portrait.', rest: 'The guide allows a long main sleep and sometimes a siesta. Compare time asleep with how restored you feel, especially if spending longer in bed still leaves you sleepy.', reflection: 'After a comfortable full sleep, how alert do you feel during the hours you want to be awake?', patterns: ['monophasic','biphasic_siesta'], related: ['occasional_naps','main_sleep','biphasic_other'], tags: ['environment','routine'] }
+  },
+  humanDesign: {
+    generator: { temperament: 'In the guide’s Human Design framework, Generator is associated with a defined sacral center and sustained engagement in activity.', rest: 'Its rest teaching emphasizes noticing genuine tiredness after a satisfying day. Use that idea to observe the relationship between your activities and settling, while preserving adequate sleep opportunity. A type label does not require you to exercise until exhausted.', reflection: 'Which days leave you comfortably ready for sleep, and which leave you mentally or physically activated?', patterns: ['monophasic'], related: ['occasional_naps','main_sleep'], tags: ['physical','routine'] },
+    manifesting_generator: { temperament: 'The guide describes Manifesting Generator as the Generator family expressed through a motor-to-throat connection, with quicker shifts between activities.', rest: 'Its rest teaching highlights using the day’s energy and allowing the replay of projects to settle. The guide allows a main sleep and sometimes a short nap; compare that with your actual use of naps and preferred stopping time.', reflection: 'Do unfinished projects keep your attention active at bedtime, and what helps you bring the day to a close?', patterns: ['monophasic','biphasic_nap'], related: ['occasional_naps','main_sleep','biphasic_other'], tags: ['physical','mental'] },
+    projector: { temperament: 'Within the guide’s Human Design framework, Projector is associated with an undefined sacral center and a guiding role.', rest: 'Its teaching emphasizes making room for quiet rest before exhaustion. Rest can be a pause in activity without necessarily becoming a nap. If you do nap, examine your own alertness and the effect on your main sleep before deciding how well it fits.', reflection: 'Can you notice a useful time to pause before exhaustion, and does that pause need sleep or simply less stimulation?', patterns: ['biphasic_nap','biphasic_siesta','biphasic_other','segmented_naps'], related: ['occasional_naps'], tags: ['rest','environment'], extra: 'The guide’s comparison table also includes segmented sleep plus naps for Projectors keeping their own schedule.' },
+    manifestor: { temperament: 'The guide describes Manifestor through periods of initiating activity followed by a withdrawal of effort in Human Design’s terms.', rest: 'Its rest teaching emphasizes allowing recovery before exhaustion and protecting quiet time. It permits either a main sleep or a split main sleep during quieter periods, so it does not prescribe a single nightly arrangement.', reflection: 'After a period of intense activity, what tells you that it is time to reduce demands and allow recovery?', patterns: ['monophasic','segmented'], related: ['occasional_naps','main_sleep','segmented_naps'], tags: ['rest','flexible'] },
+    reflector: { temperament: 'Within the guide’s Human Design framework, Reflector is described as having no defined centers and observing experience over a lunar cycle.', rest: 'The guide asks Reflectors to consider their surroundings and observe patterns over a month. You can record sleep, demands and the environment over that period without assuming that the moon caused any change you notice.', reflection: 'Across several weeks, which changes in your surroundings or obligations accompany easier or harder rest?', patterns: [], related: [], tags: ['environment','flexible'], open: true }
+  }
+};
+
+const preferredHours = {
+  early: ['You prefer earlier hours', 'You chose earlier sleep and waking when free to choose. Compare that preference with the hours work, training and family life allow.'],
+  middle: ['You prefer hours in the middle', 'You chose neither especially early nor especially late hours. Look for the sleep opportunity that feels comfortable and leaves you alert across ordinary days.'],
+  late: ['You prefer later hours', 'You chose later sleep and waking when free to choose. Compare that preference with any early obligations and with your actual total sleep.'],
+  variable: ['Your preferred hours change', 'You described a changing preference. A record of workdays and free days can help distinguish changing demands from a preference that varies even when you control the schedule.'],
+  unknown: ['Your preferred hours are still unclear', 'You were unsure which hours you would choose. Record a few days with fewer obligations, including bedtime, waking, naps and how alert you felt.']
+};
+
+const restChallenges = {
+  mental: { title: 'Your mind stays active', text: 'You identified busy thoughts or unfinished tasks as a barrier to settling. This is something you reported about your own experience; it can be explored directly whatever your sign or type.', experiment: 'Before bed, record the tasks or thoughts you want to return to tomorrow. Compare how settling feels with evenings when you continue working through them in bed.', tag: 'mental' },
+  physical: { title: 'You still feel physically activated', text: 'You identified physical activation as a barrier to settling. Note the timing and intensity of activity, as well as when you begin to feel ready for sleep.', experiment: 'Record the time your last demanding activity ends and the time you feel ready for sleep. Look for a comfortable transition into rest without adding exertion just to fit a type description.', tag: 'physical' },
+  emotional: { title: 'Emotions or worries affect settling', text: 'You identified emotions, worry or unsettled interactions as a barrier. The circumstances you describe provide a more useful starting point than assuming a sign explains the feeling.', experiment: 'Note what felt unresolved in the evening and what helped you feel settled. Look for repeated circumstances across several days.', tag: 'emotional' },
+  environment: { title: 'Your surroundings affect rest', text: 'You identified the room, noise, light or interruptions as a barrier. Compare the specific disturbance with when and how often your sleep is interrupted.', experiment: 'Choose one practical disturbance you can change, such as light or noise, and compare several otherwise ordinary nights before and after that change.', tag: 'environment' },
+  obligations: { title: 'Responsibilities limit your sleep', text: 'You identified work, caregiving or other obligations as the main difficulty. The schedule you currently keep may describe the time available to you more than the hours you would freely choose.', experiment: 'Compare one workday with one day off. Record the sleep you wanted, the time available, and which obligation changed it.', tag: 'obligations' },
+  none: { title: 'You did not identify a settling barrier', text: 'You did not report a usual difficulty winding down. Keep attention on the parts of your routine that work, your total sleep and daytime alertness.', experiment: 'Record a few ordinary days when rest goes well so you can identify what is already helping.', tag: null },
+  unknown: { title: 'No single barrier stands out yet', text: 'You were unsure what most affects settling. Brief notes about timing, activities, surroundings and daytime alertness can reveal a useful pattern without requiring a personality label.', experiment: 'For a week, note one evening circumstance and how settling felt. Look for repetition before choosing something to change.', tag: null }
+};
+
+const energyDescriptions = {
+  steady: ['You describe steady energy', 'You described your energy as fairly steady. Observe whether that remains true across different activities and after different amounts of sleep.'],
+  bursts: ['You describe bursts of activity', 'You described periods of strong activity followed by a need to pause. Record the length and demands of those periods and whether the pauses restore you.'],
+  variable: ['Your energy varies from day to day', 'You described variable energy. Sleep opportunity, demands and the day’s circumstances are useful things to record alongside that variation.'],
+  unknown: ['Your energy pattern is still unclear', 'You have not identified a usual energy pattern. You can leave this open while you observe a few ordinary days.']
+};
+
+const sharedThemes = {
+  routine: 'predictable hours and a clear end to the day',
+  environment: 'a settled sleeping environment',
+  mental: 'mental activity that continues into bedtime',
+  emotional: 'emotional ease and settled relationships',
+  physical: 'the relationship between activity and recovery',
+  flexible: 'variation in timing or the way rest is arranged',
+  obligations: 'the effect of responsibilities on rest',
+  rest: 'making room for rest before exhaustion'
+};
+
+const yearElementReflections = {
+  Wood: 'The guide’s Wood reflection concerns restlessness and changing activity. Consider when you feel ready to stop and whether that changes with the season or the demands of the day.',
+  Fire: 'The guide’s Fire reflection concerns late activity and settling the evening. Consider what helps you move from activity into a comfortable period of rest.',
+  Earth: 'The guide’s Earth reflection concerns daily routines and meal timing. Consider which familiar parts of the day help you keep room for sleep.',
+  Metal: 'The guide’s Metal reflection concerns precise hours and emotional reflection. Consider whether a dependable routine or time to acknowledge lingering feelings changes how you settle.',
+  Water: 'The guide’s Water reflection concerns longer, deeper rest. Consider how the amount you sleep relates to feeling restored when you wake.'
+};
+
+function naturalList(values) {
+  if (values.length < 2) return values[0] || '';
+  return values.length === 2 ? values.join(' and ') : values.slice(0,-1).join(', ') + ' and ' + values.at(-1);
+}
+
+function compareProfile(theme, observed, answers) {
+  const name = observed.name || 'your reported arrangement';
+  const key = observed.key || 'unclear';
+  if (key === 'unclear') return {
+    label: 'Sleep comparison still open',
+    text: 'Your sleep answers do not yet establish one usual arrangement. The tradition profile can still offer reflection questions; review the uncertain sleep answers before comparing arrangements.'
+  };
+  if (theme.open) return {
+    label: 'No fixed arrangement in this profile',
+    text: 'The guide allows a personally chosen pattern here, so ' + name + ' cannot confirm or contradict this broad association. Compare its themes with the circumstances you actually reported.'
+  };
+  const similar = theme.patterns.includes(key);
+  const related = theme.related.includes(key);
+  let text = similar
+    ? 'Your reported ' + name + ' arrangement is included in this profile’s associations in the guide. That is a similarity in description; total sleep, comfort and daytime functioning still determine how the routine is working for you.'
+    : related
+      ? 'Your reported ' + name + ' shares part of this profile’s arrangement or context, but the guide’s description is broader than the details you gave. Keep the actual pattern name and use the comparison to choose what to observe.'
+      : 'You reported ' + name + ', while this guide profile emphasizes a different arrangement. Both descriptions can remain in your report. Your answers describe the routine you currently keep; the tradition gives you a question to consider.';
+  if (['segmented','segmented_naps'].includes(key) && answers.waking === 'trouble') {
+    text += ' You also reported struggling to return to sleep, so the comfort and effect of those awakenings need attention even when the arrangement resembles the guide’s description.';
+  }
+  return { label: similar ? 'Similar arrangement in the guide' : related ? 'Partial overlap with the guide' : 'Different arrangement from the guide', text };
+}
+
+function profileSubtitle(group, record, selection) {
+  if (group === 'western') {
+    const basis = selection.westernBasis === 'date_range' ? 'Sun-sign date-range estimate'
+      : selection.westernBasis === 'confirmed' ? 'Sun sign confirmed by you' : 'Sun sign selected by you';
+    return record.element + ' element · ' + basis;
+  }
+  if (group === 'chinese') {
+    if (selection.chineseBasis === 'lunar_new_year' && Number.isInteger(selection.chineseYear) && selection.chineseElement && selection.chinesePolarity) {
+      return selection.chineseYear + ' lunar year · ' + selection.chinesePolarity + ' ' + selection.chineseElement + ' ' + record.name;
+    }
+    return 'Animal sign selected by you';
+  }
+  return 'Type from the Human Design chart you selected';
+}
+
+/** Build a shared web/PDF reading without inferring an observed pattern from a birth profile. */
+export function buildPersonalProfile(answers = {}, selection = {}, observed = {}) {
+  const selected = selectionRecords(selection).filter(({record}) => record).map(item => ({...item, theme: personalThemes[item.group][item.record.id]}));
+  const name = observed.name || 'the arrangement described in your sleep result';
+  const summary = ['Your current sleep result is ' + name + '. It comes from your answers about sleep and naps over the past two weeks.'];
+  const preferences = [];
+  const experiments = [];
+  const cards = selected.map(({group,title,record,theme}) => {
+    const paragraphs = [theme.temperament, theme.rest, 'Sleep association in the guide: ' + record.affinity];
+    if (theme.extra) paragraphs.push(theme.extra);
+    if (group === 'western' && selection.westernBasis === 'date_range') {
+      paragraphs.push('This uses the guide’s conventional Sun-sign date ranges. A full birth chart uses the exact birth time and place, especially near a sign change.');
+    }
+    if (group === 'chinese') {
+      if (selection.chineseBasis === 'lunar_new_year' && Number.isInteger(selection.chineseYear) && selection.chineseElement && selection.chinesePolarity) {
+        paragraphs.push('Your birth-year label uses the Lunar New Year convention. The ' + selection.chineseElement + ' year element belongs to the year’s heavenly stem. The guide separately groups ' + record.name + ' with ' + record.phase.toLowerCase() + ' as a temperament theme; these two labels describe different parts of the tradition.');
+        if (yearElementReflections[selection.chineseElement]) paragraphs.push('Applying the guide’s general five-phase reflection to your year element: ' + yearElementReflections[selection.chineseElement]);
+      } else {
+        paragraphs.push('The guide’s temperament grouping for this animal is ' + record.phase.toLowerCase() + '. A birth-year element can be added when the birth date is used to establish the lunar year.');
+      }
+    }
+    if (group === 'humanDesign') paragraphs.push('This follows the guide’s rest teaching for your selected waking type. Human Design’s separate DreamRave sleeping chart uses different calculations and may have a different type. This report does not calculate a DreamRave chart.');
+    const challenge = restChallenges[answers.restChallenge];
+    if (challenge?.tag && theme.tags.includes(challenge.tag)) {
+      paragraphs.push('You also reported ' + ({mental:'an active mind',physical:'physical activation',emotional:'emotions or worry',environment:'the sleeping environment',obligations:'responsibilities'}[challenge.tag]) + ' as something that affects settling. That gives this theme a specific connection to your own answers.');
+    }
+    return { key: group, title: title + ': ' + record.name, subtitle: profileSubtitle(group,record,selection), paragraphs, comparison: compareProfile(theme,observed,answers), reflection: theme.reflection, sourcePages: [...new Set([...record.sourcePages,...(theme.extra ? [23] : []),...(group==='chinese' && selection.chineseElement ? [20] : [])])].sort((a,b)=>a-b) };
+  });
+  if (selected.length) {
+    summary.push('Your selected profiles are ' + naturalList(selected.map(item=>item.record.name)) + '. Their meanings below come from the Field Guide’s traditional interpretations.');
+    const shared = Object.entries(sharedThemes).map(([key,text]) => ({key,text,members:selected.filter(item=>item.theme.tags.includes(key))})).filter(item=>item.members.length>1).sort((a,b)=>b.members.length-a.members.length).slice(0,2);
+    if (shared.length) {
+      for (const item of shared) summary.push(naturalList(item.members.map(member=>member.record.name)) + ' share a theme of ' + item.text + ' in the guide. Compare that theme with the preferences and circumstances you reported.');
+    } else if (selected.length>1) {
+      summary.push('These profiles emphasize different aspects of rest. Use each reflection to examine a concrete experience instead of trying to make every tradition prescribe the same schedule.');
+    }
+    const overlaps=cards.filter(card=>card.comparison.label==='Similar arrangement in the guide');
+    const differences=cards.filter(card=>card.comparison.label==='Different arrangement from the guide');
+    if (overlaps.length && differences.length) summary.push('The comparisons include both similarities and differences. A difference does not mean you answered incorrectly or that your current pattern needs to be changed to match a sign.');
+  } else {
+    summary.push('No birth-profile signs or Human Design type were supplied. Your sleep result and any preferences you described remain available, and you can add the traditional profiles when you know them.');
+  }
+  const missing=[];
+  if (!selection.western) missing.push('Western Sun sign');
+  if (!selection.chinese) missing.push('Chinese animal sign');
+  if (!selection.humanDesign) missing.push('Human Design type');
+  if (selected.length && missing.length) summary.push(naturalList(missing) + (missing.length===1?' was':' were') + ' not supplied, so those parts of the reading remain open.');
+  if (!selection.humanDesign) summary.push('Human Design is left unknown until you supply a type from a birth chart. Birth date alone does not establish that type.');
+  const hours=preferredHours[answers.chronotype];
+  if (hours) {
+    const paragraphs=[hours[1], 'This is your self-described timing preference. It does not establish an inborn or permanent sleep requirement.'];
+    if (answers.alertness==='D') paragraphs.push('You also reported that afternoons are usually part of your main sleep. Compare your preferred hours with the hours your current schedule requires.');
+    preferences.push({title:hours[0],paragraphs});
+  }
+  const challenge=restChallenges[answers.restChallenge];
+  if (challenge) {
+    preferences.push({title:challenge.title,paragraphs:[challenge.text]});
+    experiments.push({title:'Observe what most affects your rest',text:challenge.experiment});
+  }
+  const energy=energyDescriptions[answers.energyStyle];
+  if (energy) {
+    const paragraphs=[energy[1]];
+    if (selection.humanDesign && answers.energyStyle!=='unknown') paragraphs.push('Compare this self-description with your selected Human Design profile below. Agreement or difference does not verify or change a chart-derived type.');
+    preferences.push({title:energy[0],paragraphs});
+  }
+  if (Number.isInteger(answers.total) && answers.total<420) experiments.unshift({title:'Start with your reported amount of sleep',text:'Your full-day total is below seven hours. Review the age-based duration guidance in your sleep result before experimenting with the arrangement. A traditional affinity is not a reason to reduce sleep further.'});
+  if (answers.alertness==='C' || answers.sleepyDriving==='yes') experiments.unshift({title:'Give unwanted sleepiness priority',text:'Review the daytime-alertness guidance in your sleep result first. A sign or type association does not explain away dozing when you intended to stay awake.'});
+  if (answers.chronotype && !['unknown','variable'].includes(answers.chronotype)) experiments.push({title:'Compare preferred and required hours',text:'Record a workday and a free day. Compare the hours you choose, the hours obligations require, your total sleep and your alertness.'});
+  experiments.push({title:'Use the profile as a question to investigate',text:selected.length?'Choose one reflection from a selected profile and follow it alongside your sleep diary. Keep the schedule that provides adequate rest and fits your life; revise an interpretation when your observations disagree.':'Keep a brief record of your usual sleep and naps, including what changes on days off. You can compare that record with a birth profile later.'});
+  const sources=[{title:'Sleep Patterns: A Field Guide, Part Two, pages 17–23',url:'https://mike-cloudforest.github.io/sleep-patterns-diagnostic/assets/Sleep-Patterns-Guide.pdf'}];
+  if (selection.westernBasis==='date_range') sources.push({title:'Astrodienst: why Sun-sign boundary dates need birth details',url:'https://www.astro.com/faq/fq_ua_general_e.htm'});
+  if (selection.chineseBasis==='lunar_new_year') sources.push(
+    {title:'Hong Kong Observatory: Lunar New Year and the year convention',url:'https://www.hko.gov.hk/en/education/astronomy-and-time/time-service/00506-what-year-is-it-today.html'},
+    {title:'Hong Kong Observatory: heavenly stems and earthly branches',url:'https://www.hko.gov.hk/en/gts/time/stemsandbranches.htm'}
+  );
+  sources.push({title:'Jovian Archive: find your Human Design birth chart',url:'https://jovianarchive.com/pages/get-your-human-design-chart'});
+  if (selection.humanDesign) sources.push({title:'Jovian Archive: the separate DreamRave sleeping chart',url:'https://jovianarchive.com/pages/understanding-dreams-with-human-design'});
+  return {
+    title:'Your sleep and personal profile',
+    introduction:'Your answers describe your current sleep and your own preferences. The Field Guide adds Western astrology, Chinese zodiac and Human Design interpretations for reflection. Those traditions do not establish a biological sleep need or a measured personality type.',
+    summary,cards,preferences,experiments,
+    sources
+  };
+}
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -169,7 +382,7 @@ function referenceDetails(title, introduction, pages, content) {
     '</p><p class="tradition-source">' + escapeHtml(sourceLabel(pages)) + '</p>' + content + '</details>';
 }
 
-export function renderTraditions(container, selection = {}) {
+export function renderTraditions(container, selection = {}, options = {}) {
   if (!container || typeof container.replaceChildren !== 'function') throw new TypeError('A DOM container is required.');
   const data = traditionsData;
   const groups = [
@@ -220,11 +433,11 @@ export function renderTraditions(container, selection = {}) {
       @media print { .sleep-traditions .tradition-selects { display: none; } }
     </style>
     <section class="sleep-traditions">
-      <h2>${escapeHtml(data.title)}</h2>
+      <h2>${escapeHtml(options.referenceOnly ? 'Explore the guide’s traditions' : data.title)}</h2>
       <p>${escapeHtml(data.introduction)}</p>
-      <p>Choose any sign, animal or type you already know. Every choice is optional.</p>
+      ${options.referenceOnly ? '' : `<p>Choose any sign, animal or type you already know. Every choice is optional.</p>
       <div class="tradition-selects">${choices}</div>
-      <div data-tradition-cards aria-live="polite"></div>
+      <div data-tradition-cards aria-live="polite"></div>`}
       ${western}${chinese}${clock}${humanDesign}${comparison}
     </section>`;
 
@@ -236,7 +449,7 @@ export function renderTraditions(container, selection = {}) {
       '<p class="tradition-source">' + escapeHtml(sourceLabel(card.sourcePages)) + '</p></article>'
     ).join('');
   }
-  updateCards();
+  if (!options.referenceOnly) updateCards();
   container.querySelectorAll('select[data-tradition]').forEach(select => {
     select.addEventListener('change', () => {
       current[select.dataset.tradition] = select.value;
